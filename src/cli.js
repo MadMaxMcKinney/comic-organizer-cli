@@ -5,6 +5,7 @@ import { logger } from "./utils/logger.js";
 import { directoryExists, fileExists, findComicFiles } from "./utils/files.js";
 import { runAutoOrganizer, executeAssignments } from "./organizers/auto.js";
 import { runManualOrganizer } from "./organizers/manual.js";
+import { runFlattenOrganizer } from "./organizers/flatten.js";
 
 const DEFAULT_CONFIG_FILE = "./filters.json";
 
@@ -35,6 +36,10 @@ async function selectMode() {
                 {
                     name: "📋 Manual - Use a JSON filter configuration file",
                     value: "manual",
+                },
+                {
+                    name: "📦 Flatten hierarchy - Move all comics to root folder",
+                    value: "flatten",
                 },
                 {
                     name: "❓ Help - Learn more about each option",
@@ -103,6 +108,20 @@ function showHelp() {
         chalk.white(`
   Files matching "spider-man" would go to: Marvel/Spider-Man/
   Files matching "dc" but not specific sub-filters go to: DC Comics/
+`)
+    );
+
+    logger.section("About Flatten Hierarchy");
+    console.log(
+        chalk.white(`
+  Flatten mode collects all comic files from all subdirectories
+  and moves them to the root folder, then removes the empty folders.
+
+  Use this when you want to undo organization or start fresh.
+
+  Example:
+    Before: Comics/Marvel/Spider-Man/issue1.cbz
+    After:  Comics/issue1.cbz
 `)
     );
 
@@ -343,6 +362,33 @@ async function runManualFlow() {
 }
 
 /**
+ * Run flatten hierarchy flow
+ */
+async function runFlattenFlow() {
+    const sourceDir = await getSourceDirectory();
+    if (!sourceDir) return;
+
+    // Preview first
+    const result = await runFlattenOrganizer(sourceDir, { dryRun: true });
+
+    if (result.wouldMove > 0) {
+        logger.newline();
+        const { execute } = await inquirer.prompt([
+            {
+                type: "confirm",
+                name: "execute",
+                message: `Move ${result.wouldMove} files to root and remove ${result.foldersToRemove} folders?`,
+                default: true,
+            },
+        ]);
+
+        if (execute) {
+            await runFlattenOrganizer(sourceDir, { dryRun: false });
+        }
+    }
+}
+
+/**
  * Main CLI runner
  */
 export async function runCLI() {
@@ -360,6 +406,10 @@ export async function runCLI() {
 
             case "manual":
                 await runManualFlow();
+                break;
+
+            case "flatten":
+                await runFlattenFlow();
                 break;
 
             case "help":
