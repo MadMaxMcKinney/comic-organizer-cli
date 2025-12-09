@@ -7,8 +7,33 @@ import { detectSeriesGroups, createSeriesLookupMap, promptSeriesReview } from ".
 
 /**
  * Build assignments from metadata results and series detection
+ * Series detection takes priority - files in a series stay together
  */
-function buildAssignments(files, metadataResults, seriesLookupMap) {
+function buildAssignments(files, metadataResults, seriesLookupMap, seriesGroups) {
+    // First pass: determine the best publisher for each series
+    const seriesPublisherMap = new Map();
+
+    for (const group of seriesGroups) {
+        const publishers = new Map(); // publisher -> count
+
+        // Count publishers for files in this series
+        for (const file of group.files) {
+            const fileIndex = files.indexOf(file);
+            if (fileIndex !== -1) {
+                const metadata = metadataResults[fileIndex];
+                if (metadata.publisher) {
+                    publishers.set(metadata.publisher, (publishers.get(metadata.publisher) || 0) + 1);
+                }
+            }
+        }
+
+        // Use the most common publisher for this series
+        if (publishers.size > 0) {
+            const mostCommonPublisher = Array.from(publishers.entries()).sort((a, b) => b[1] - a[1])[0][0];
+            seriesPublisherMap.set(group.seriesName, mostCommonPublisher);
+        }
+    }
+
     return files.map((file, index) => {
         const metadata = metadataResults[index];
         const detectedSeries = seriesLookupMap.get(file);
@@ -16,12 +41,20 @@ function buildAssignments(files, metadataResults, seriesLookupMap) {
         // If we detected a series for this file, use it to build a better folder path
         let folder = metadata.suggestedFolder;
 
-        if (detectedSeries && metadata.publisher) {
-            // Use detected series name with the publisher
-            folder = `${metadata.publisher}/${detectedSeries}`;
-        } else if (detectedSeries && !metadata.publisher) {
-            // Use detected series name even without publisher
-            folder = detectedSeries;
+        if (detectedSeries) {
+            // Use the series-level publisher (most common for the series)
+            const seriesPublisher = seriesPublisherMap.get(detectedSeries);
+
+            if (seriesPublisher) {
+                // Use series publisher with the series name
+                folder = `${seriesPublisher}/${detectedSeries}`;
+            } else if (metadata.publisher) {
+                // Fallback to file's own publisher if no series publisher
+                folder = `${metadata.publisher}/${detectedSeries}`;
+            } else {
+                // Use detected series name without publisher
+                folder = detectedSeries;
+            }
         }
 
         return {
@@ -202,7 +235,7 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
     analyzeSpinner.succeed(`Analyzed ${metadataResults.length} files`);
 
     // Build assignments with series detection
-    let assignments = buildAssignments(files, metadataResults, seriesLookupMap);
+    let assignments = buildAssignments(files, metadataResults, seriesLookupMap, seriesGroups);
 
     // Simplify single-file folders (put directly in publisher folder)
     assignments = simplifySingleFileAssignments(assignments);
