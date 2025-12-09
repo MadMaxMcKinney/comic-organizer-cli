@@ -1,0 +1,33 @@
+{
+  "name": "comic-organizer",
+  "version": "1.0.0",
+  "description": "Interactive CLI to organize digital comic files (cbr, cbz, pdf, epub)",
+  "main": "src/index.js",
+  "type": "module",
+  "bin": {
+    "comic-organizer": "./src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "link": "npm link"
+  },
+  "keywords": [
+    "comics",
+    "organizer",
+    "cli",
+    "cbr",
+    "cbz",
+    "pdf",
+    "epub"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "inquirer": "^9.2.12",
+    "ora": "^8.0.1",
+    "glob": "^10.3.10",
+    "fs-extra": "^11.2.0"
+  }
+}
+

@@ -1,0 +1,121 @@
+{
+    "filters": [
+        {
+            "name": "Marvel",
+            "pattern": "marvel|avengers|spider-man|x-men|iron\\s*man|captain\\s*america|thor|hulk|deadpool|wolverine|fantastic\\s*four|daredevil",
+            "filters": [
+                {
+                    "name": "Spider-Man",
+                    "pattern": "spider-man|spiderman|amazing\\s*spider|spectacular\\s*spider|web\\s*of\\s*spider",
+                    "filters": [
+                        { "name": "Amazing Spider-Man", "pattern": "amazing\\s*spider" },
+                        { "name": "Spectacular Spider-Man", "pattern": "spectacular\\s*spider" },
+                        { "name": "Ultimate Spider-Man", "pattern": "ultimate\\s*spider" }
+                    ]
+                },
+                {
+                    "name": "X-Men",
+                    "pattern": "x-men|x-force|x-factor|new\\s*mutants|wolverine",
+                    "filters": [
+                        { "name": "Uncanny X-Men", "pattern": "uncanny\\s*x-men" },
+                        { "name": "Wolverine", "pattern": "wolverine" },
+                        { "name": "X-Force", "pattern": "x-force" }
+                    ]
+                },
+                {
+                    "name": "Avengers",
+                    "pattern": "avengers",
+                    "filters": [
+                        { "name": "New Avengers", "pattern": "new\\s*avengers" },
+                        { "name": "Mighty Avengers", "pattern": "mighty\\s*avengers" }
+                    ]
+                },
+                { "name": "Iron Man", "pattern": "iron\\s*man" },
+                { "name": "Captain America", "pattern": "captain\\s*america" },
+                { "name": "Thor", "pattern": "\\bthor\\b" },
+                { "name": "Hulk", "pattern": "hulk|incredible\\s*hulk" },
+                { "name": "Deadpool", "pattern": "deadpool" },
+                { "name": "Fantastic Four", "pattern": "fantastic\\s*four" },
+                { "name": "Daredevil", "pattern": "daredevil" }
+            ]
+        },
+        {
+            "name": "DC Comics",
+            "pattern": "dc|batman|superman|wonder\\s*woman|flash|green\\s*lantern|aquaman|justice\\s*league|teen\\s*titans",
+            "filters": [
+                {
+                    "name": "Batman",
+                    "pattern": "batman|dark\\s*knight|detective\\s*comics",
+                    "filters": [
+                        { "name": "Detective Comics", "pattern": "detective\\s*comics" },
+                        { "name": "Dark Knight", "pattern": "dark\\s*knight" },
+                        { "name": "Batman and Robin", "pattern": "batman\\s*(and|&)\\s*robin" }
+                    ]
+                },
+                {
+                    "name": "Superman",
+                    "pattern": "superman|action\\s*comics|man\\s*of\\s*steel"
+                },
+                { "name": "Wonder Woman", "pattern": "wonder\\s*woman" },
+                { "name": "The Flash", "pattern": "\\bflash\\b" },
+                { "name": "Green Lantern", "pattern": "green\\s*lantern" },
+                { "name": "Aquaman", "pattern": "aquaman" },
+                { "name": "Justice League", "pattern": "justice\\s*league" },
+                { "name": "Teen Titans", "pattern": "teen\\s*titans" }
+            ]
+        },
+        {
+            "name": "Image Comics",
+            "pattern": "image|walking\\s*dead|spawn|invincible|saga|savage\\s*dragon",
+            "filters": [
+                { "name": "The Walking Dead", "pattern": "walking\\s*dead" },
+                { "name": "Spawn", "pattern": "spawn" },
+                { "name": "Invincible", "pattern": "invincible" },
+                { "name": "Saga", "pattern": "\\bsaga\\b" }
+            ]
+        },
+        {
+            "name": "Dark Horse",
+            "pattern": "dark\\s*horse|hellboy|sin\\s*city|conan",
+            "filters": [
+                { "name": "Hellboy", "pattern": "hellboy" },
+                { "name": "Sin City", "pattern": "sin\\s*city" },
+                { "name": "Conan", "pattern": "conan" }
+            ]
+        },
+        {
+            "name": "IDW",
+            "pattern": "idw|transformers|tmnt|teenage\\s*mutant|star\\s*trek|ghostbusters",
+            "filters": [
+                { "name": "Transformers", "pattern": "transformers" },
+                { "name": "TMNT", "pattern": "tmnt|teenage\\s*mutant|ninja\\s*turtles" },
+                { "name": "Star Trek", "pattern": "star\\s*trek" }
+            ]
+        },
+        {
+            "name": "Vertigo",
+            "pattern": "vertigo|sandman|preacher|y\\s*the\\s*last\\s*man|fables|100\\s*bullets",
+            "filters": [
+                { "name": "Sandman", "pattern": "sandman" },
+                { "name": "Preacher", "pattern": "preacher" },
+                { "name": "Y The Last Man", "pattern": "y\\s*the\\s*last\\s*man" },
+                { "name": "Fables", "pattern": "\\bfables\\b" }
+            ]
+        },
+        {
+            "name": "Manga",
+            "pattern": "manga|\\bjp\\b|japanese|shonen|seinen|shojo|one\\s*piece|naruto|bleach|dragon\\s*ball|attack\\s*on\\s*titan",
+            "filters": [
+                { "name": "One Piece", "pattern": "one\\s*piece" },
+                { "name": "Naruto", "pattern": "naruto" },
+                { "name": "Dragon Ball", "pattern": "dragon\\s*ball" },
+                { "name": "Attack on Titan", "pattern": "attack\\s*on\\s*titan|shingeki" },
+                { "name": "Bleach", "pattern": "\\bbleach\\b" }
+            ]
+        },
+        {
+            "name": "Independent",
+            "pattern": "indie|independent|self-published"
+        }
+    ]
+}
