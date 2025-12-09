@@ -67,7 +67,7 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
 
     if (dryRun) {
         logger.newline();
-        logger.warning("DRY RUN - No files will be moved");
+        logger.warning("DRY RUN - No files have been moved");
         logger.newline();
 
         // Show what would happen
