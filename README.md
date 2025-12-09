@@ -6,6 +6,8 @@ An interactive CLI application for organizing your digital comic collection. Sup
 
 - **🤖 Automatic Organization**: Analyzes filenames to detect publishers, series, and issue numbers. Uses pattern matching and optional Google Books API lookup.
 - **📋 Manual Organization**: Use a JSON configuration file with regex patterns to define your own folder structure.
+- **📦 Flatten Hierarchy**: Move all comics from subdirectories to the root folder.
+- **⚙️ Post-Processing**: Rename files based on metadata after organization, or run post-processing operations on any directory.
 - **🔍 Preview Mode**: See exactly what will happen before any files are moved.
 - **🎨 Beautiful CLI**: Color-coded output with progress indicators.
 
@@ -33,7 +35,9 @@ npm start
 You'll be presented with options to:
 1. **Automatic Organization** - Let the app analyze filenames and organize automatically
 2. **Manual Organization** - Use your custom filters.json configuration
-3. **Help** - Learn more about each option
+3. **Flatten Hierarchy** - Move all comics to the root folder and remove empty directories
+4. **Post-Processing Only** - Run post-processing operations (like renaming) on any directory
+5. **Help** - Learn more about each option
 
 ### Example Session
 
@@ -45,6 +49,8 @@ You'll be presented with options to:
 ? How would you like to organize your comics?
   🤖 Automatic - Analyze filenames and look up metadata
   📋 Manual - Use a JSON filter configuration file
+  📦 Flatten hierarchy - Move all comics to root folder
+  ⚙️  Post-processing only - Run post-processing on a directory
   ❓ Help - Learn more about each option
   👋 Exit
 
@@ -127,9 +133,9 @@ organized-comics/
     └── Batman 123.cbr
 ```
 
-## Example Filter Configurations
+### Example Filter Configurations
 
-### By Publisher Only
+#### By Publisher Only
 ```json
 {
   "filters": [
@@ -140,7 +146,7 @@ organized-comics/
 }
 ```
 
-### By Year
+#### By Year
 ```json
 {
   "filters": [
@@ -151,7 +157,7 @@ organized-comics/
 }
 ```
 
-### By Format
+#### By Format
 ```json
 {
   "filters": [
@@ -161,6 +167,20 @@ organized-comics/
   ]
 }
 ```
+
+## Post-Processing
+
+After organizing your comics, you can run post-processing operations. These are also available as a standalone mode to process any directory.
+
+### Rename Files
+
+Automatically rename files based on extracted metadata (including fetched metadata). Choose from multiple format options:
+
+- **Publisher - Series - Issue #123 (Year)**: `Marvel - Spider-Man - Issue #001 (2023).cbz`
+- **Series - #123 (Year)**: `Spider-Man - #001 (2023).cbz`
+- **Series #123**: `Spider-Man #001.cbz`
+- **Publisher - Series (Year)**: `Marvel - Spider-Man (2023).cbz`
+- **Series_Issue_Year**: `Spider-Man_001_2023.cbz`
 
 ## Supported File Types
 
