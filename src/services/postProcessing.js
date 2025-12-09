@@ -2,6 +2,7 @@ import inquirer from "inquirer";
 import chalk from "chalk";
 import { logger } from "../utils/logger.js";
 import { renameFilesHandler } from "../postProcessors/renameFiles.js";
+import { consolidateFoldersHandler } from "../postProcessors/consolidateFolders.js";
 
 /**
  * Available post-processing options
@@ -12,6 +13,12 @@ import { renameFilesHandler } from "../postProcessors/renameFiles.js";
  * - handler: Function to execute the post-processing task
  */
 const POST_PROCESSING_OPTIONS = [
+    {
+        name: "Consolidate similar folders",
+        value: "consolidate-folders",
+        description: "Merge folders with similar names into single folders",
+        handler: consolidateFoldersHandler,
+    },
     {
         name: "Rename files based on metadata",
         value: "rename-files",

@@ -3,17 +3,34 @@ import ora from "ora";
 import { logger } from "../utils/logger.js";
 import { findComicFiles, getFilename, moveFile } from "../utils/files.js";
 import { batchGetMetadata } from "../services/metadata.js";
-import { runConsolidation } from "./consolidate.js";
+import { detectSeriesGroups, createSeriesLookupMap } from "../services/seriesDetection.js";
 
 /**
- * Build assignments from metadata results
+ * Build assignments from metadata results and series detection
  */
-function buildAssignments(files, metadataResults) {
-    return files.map((file, index) => ({
-        file,
-        folder: metadataResults[index].suggestedFolder,
-        metadata: metadataResults[index],
-    }));
+function buildAssignments(files, metadataResults, seriesLookupMap) {
+    return files.map((file, index) => {
+        const metadata = metadataResults[index];
+        const detectedSeries = seriesLookupMap.get(file);
+
+        // If we detected a series for this file, use it to build a better folder path
+        let folder = metadata.suggestedFolder;
+
+        if (detectedSeries && metadata.publisher) {
+            // Use detected series name with the publisher
+            folder = `${metadata.publisher}/${detectedSeries}`;
+        } else if (detectedSeries && !metadata.publisher) {
+            // Use detected series name even without publisher
+            folder = detectedSeries;
+        }
+
+        return {
+            file,
+            folder,
+            metadata,
+            detectedSeries,
+        };
+    });
 }
 
 /**
@@ -129,7 +146,7 @@ export async function executeAssignments(assignments, outputDir) {
  * Automated organization using metadata lookup
  */
 export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
-    const { dryRun = false, useApi = true, skipConsolidation = false } = options;
+    const { dryRun = false, useApi = true } = options;
 
     logger.section("Scanning for comic files");
 
@@ -150,6 +167,25 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
         logger.info(`  ... and ${files.length - 10} more`);
     }
 
+    // Detect series groups BEFORE metadata analysis
+    logger.section("Detecting series from filenames");
+    const seriesSpinner = ora("Analyzing filenames for series patterns...").start();
+    const seriesGroups = detectSeriesGroups(files);
+    const seriesLookupMap = createSeriesLookupMap(seriesGroups);
+
+    if (seriesGroups.length > 0) {
+        seriesSpinner.succeed(`Detected ${seriesGroups.length} series with multiple issues`);
+        logger.newline();
+        seriesGroups.slice(0, 5).forEach((group) => {
+            logger.info(`  📚 ${group.seriesName} (${group.fileCount} files)`);
+        });
+        if (seriesGroups.length > 5) {
+            logger.info(`  ... and ${seriesGroups.length - 5} more series`);
+        }
+    } else {
+        seriesSpinner.info("No series with multiple issues detected");
+    }
+
     // Analyze files
     logger.section("Analyzing files for metadata");
 
@@ -167,30 +203,15 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
 
     analyzeSpinner.succeed(`Analyzed ${metadataResults.length} files`);
 
-    // Build assignments
-    let assignments = buildAssignments(files, metadataResults);
+    // Build assignments with series detection
+    let assignments = buildAssignments(files, metadataResults, seriesLookupMap);
 
     // Simplify single-file folders (put directly in publisher folder)
     assignments = simplifySingleFileAssignments(assignments);
 
-    // Show initial plan
+    // Show organization plan
     let groups = groupAssignments(assignments);
     showOrganizationPlan(groups);
-
-    // Offer consolidation if not skipped
-    // Run if: multiple folders OR single folder with multiple files (for within-folder grouping)
-    const totalFiles = assignments.length;
-    const folderCount = Object.keys(groups).length;
-    if (!skipConsolidation && (folderCount > 1 || totalFiles > 1)) {
-        assignments = await runConsolidation(assignments);
-        groups = groupAssignments(assignments);
-
-        // Show updated plan if consolidation happened
-        const wasConsolidated = assignments.some((a) => a.consolidated);
-        if (wasConsolidated) {
-            showOrganizationPlan(groups);
-        }
-    }
 
     if (dryRun) {
         logger.newline();
