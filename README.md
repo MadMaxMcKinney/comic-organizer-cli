@@ -144,22 +144,8 @@ organized-comics/
 
 ## Supported File Types
 
-| Extension | Description            |
-|-----------|------------------------|
-| `.cbr`    | Comic Book RAR archive |
-| `.cbz`    | Comic Book ZIP archive |
-| `.pdf`    | PDF document           |
-| `.epub`   | EPUB ebook format      |
+`.cbr`, `.cbz`, `.pdf`, `.epub` are the only supported file types.
 
-## Tips
-
-1. **Always preview first**: Use preview mode to verify the organization plan before moving files.
-
-2. **Start broad, then refine**: Begin with a simple filter configuration and add more specific sub-filters as needed.
-
-3. **Escape regex special characters**: In your patterns, remember to escape characters like `\s` for whitespace, `\b` for word boundaries.
-
-4. **Test patterns**: Use a regex tester to verify your patterns match what you expect.
 
 ## Example Filter Configurations
 

@@ -2,7 +2,7 @@ import { cleanFilenameForLookup, extractIssueNumber, extractYear } from "../util
 
 /**
  * Comic metadata lookup service
- * Uses the ComicVine API (free, requires API key) or Google Books API (free, no key required)
+ * Google Books API (free, no key required)
  */
 
 const GOOGLE_BOOKS_API = "https://www.googleapis.com/books/v1/volumes";
