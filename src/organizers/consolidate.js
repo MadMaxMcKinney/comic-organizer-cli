@@ -402,12 +402,17 @@ export async function promptConsolidation(folderGroups, withinFolderGroups, assi
             const group = folderGroups[index];
             const filesInGroup = getFilesForGroup(assignments, group.folders);
 
+            logger.newline();
+            logger.info(`Consolidating: ${chalk.cyan(group.seriesName)}`);
+            console.log(chalk.dim(`  Merging ${group.folders.length} folders with ${filesInGroup.length} files`));
+            logger.newline();
+
             // First, set the target folder
             const { targetFolder } = await inquirer.prompt([
                 {
                     type: "input",
                     name: "targetFolder",
-                    message: `Consolidate "${group.seriesName}" into folder:`,
+                    message: `Choose folder name:`,
                     default: group.suggestedFolder,
                 },
             ]);
@@ -446,12 +451,17 @@ export async function promptConsolidation(folderGroups, withinFolderGroups, assi
             // within-folder type
             const group = withinFolderGroups[index];
 
+            logger.newline();
+            logger.info(`Creating series subfolder: ${chalk.cyan(group.seriesName)}`);
+            console.log(chalk.dim(`  Grouping ${group.files.length} files from ${group.parentFolder}`));
+            logger.newline();
+
             // Set the target folder
             const { targetFolder } = await inquirer.prompt([
                 {
                     type: "input",
                     name: "targetFolder",
-                    message: `Create subfolder for "${group.seriesName}" in ${group.parentFolder}:`,
+                    message: `Choose folder name:`,
                     default: group.suggestedFolder,
                 },
             ]);
