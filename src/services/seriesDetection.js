@@ -1,4 +1,7 @@
 import { getFilename } from "../utils/files.js";
+import inquirer from "inquirer";
+import chalk from "chalk";
+import { logger } from "../utils/logger.js";
 
 /**
  * Normalize a string for comparison (lowercase, remove special chars, collapse spaces)
@@ -168,4 +171,97 @@ export function createSeriesLookupMap(seriesGroups) {
     }
 
     return map;
+}
+
+/**
+ * Prompt user to review and optionally rename detected series
+ * Returns updated series groups with user-confirmed names
+ */
+export async function promptSeriesReview(seriesGroups) {
+    if (seriesGroups.length === 0) {
+        return seriesGroups;
+    }
+
+    logger.newline();
+    logger.section("Detected Series");
+    logger.info("Review the series detected from your files:\n");
+
+    // Show all detected series
+    for (let i = 0; i < seriesGroups.length; i++) {
+        const group = seriesGroups[i];
+        console.log(chalk.cyan(`  ${i + 1}. ${group.seriesName}`) + chalk.dim(` (${group.fileCount} files)`));
+
+        // Show first 3 files as examples
+        const examples = group.files.slice(0, 3);
+        for (const file of examples) {
+            console.log(chalk.gray(`      • ${getFilename(file)}`));
+        }
+        if (group.fileCount > 3) {
+            console.log(chalk.gray(`      ... and ${group.fileCount - 3} more`));
+        }
+        console.log();
+    }
+
+    // Ask if user wants to rename any
+    const { wantRename } = await inquirer.prompt([
+        {
+            type: "confirm",
+            name: "wantRename",
+            message: "Would you like to rename any of these series?",
+            default: false,
+        },
+    ]);
+
+    if (!wantRename) {
+        return seriesGroups;
+    }
+
+    // Let user select which series to rename
+    const { seriesToRename } = await inquirer.prompt([
+        {
+            type: "checkbox",
+            name: "seriesToRename",
+            message: "Select series to rename:",
+            choices: seriesGroups.map((group, index) => ({
+                name: `${group.seriesName} (${group.fileCount} files)`,
+                value: index,
+            })),
+        },
+    ]);
+
+    if (seriesToRename.length === 0) {
+        return seriesGroups;
+    }
+
+    // Prompt for new names one by one
+    const updatedGroups = [...seriesGroups];
+
+    for (const index of seriesToRename) {
+        const group = updatedGroups[index];
+        logger.newline();
+
+        const { newName } = await inquirer.prompt([
+            {
+                type: "input",
+                name: "newName",
+                message: `Enter new name for "${group.seriesName}":`,
+                default: group.seriesName,
+                validate: (input) => {
+                    if (!input || input.trim().length === 0) {
+                        return "Series name cannot be empty";
+                    }
+                    return true;
+                },
+            },
+        ]);
+
+        updatedGroups[index] = {
+            ...group,
+            seriesName: newName.trim(),
+        };
+
+        logger.success(`Renamed to: ${newName.trim()}`);
+    }
+
+    return updatedGroups;
 }

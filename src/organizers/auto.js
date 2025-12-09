@@ -3,7 +3,7 @@ import ora from "ora";
 import { logger } from "../utils/logger.js";
 import { findComicFiles, getFilename, moveFile } from "../utils/files.js";
 import { batchGetMetadata } from "../services/metadata.js";
-import { detectSeriesGroups, createSeriesLookupMap } from "../services/seriesDetection.js";
+import { detectSeriesGroups, createSeriesLookupMap, promptSeriesReview } from "../services/seriesDetection.js";
 
 /**
  * Build assignments from metadata results and series detection
@@ -170,21 +170,19 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
     // Detect series groups BEFORE metadata analysis
     logger.section("Detecting series from filenames");
     const seriesSpinner = ora("Analyzing filenames for series patterns...").start();
-    const seriesGroups = detectSeriesGroups(files);
-    const seriesLookupMap = createSeriesLookupMap(seriesGroups);
+    let seriesGroups = detectSeriesGroups(files);
 
     if (seriesGroups.length > 0) {
         seriesSpinner.succeed(`Detected ${seriesGroups.length} series with multiple issues`);
-        logger.newline();
-        seriesGroups.slice(0, 5).forEach((group) => {
-            logger.info(`  📚 ${group.seriesName} (${group.fileCount} files)`);
-        });
-        if (seriesGroups.length > 5) {
-            logger.info(`  ... and ${seriesGroups.length - 5} more series`);
-        }
+
+        // Prompt user to review and optionally rename series
+        seriesGroups = await promptSeriesReview(seriesGroups);
     } else {
         seriesSpinner.info("No series with multiple issues detected");
     }
+
+    // Create lookup map after potential renames
+    const seriesLookupMap = createSeriesLookupMap(seriesGroups);
 
     // Analyze files
     logger.section("Analyzing files for metadata");
