@@ -3,7 +3,7 @@ import path from "path";
 import chalk from "chalk";
 import { logger } from "./utils/logger.js";
 import { directoryExists, fileExists, findComicFiles } from "./utils/files.js";
-import { runAutoOrganizer } from "./organizers/auto.js";
+import { runAutoOrganizer, executeAssignments } from "./organizers/auto.js";
 import { runManualOrganizer } from "./organizers/manual.js";
 
 const DEFAULT_OUTPUT_DIR = "./organized-comics";
@@ -293,7 +293,7 @@ async function runAutoFlow() {
 
     const result = await runAutoOrganizer(sourceDir, outputDir, options);
 
-    if (options.dryRun && result.wouldMove > 0) {
+    if (options.dryRun && result.wouldMove > 0 && result.assignments) {
         logger.newline();
         const { execute } = await inquirer.prompt([
             {
@@ -305,7 +305,8 @@ async function runAutoFlow() {
         ]);
 
         if (execute) {
-            await runAutoOrganizer(sourceDir, outputDir, { ...options, dryRun: false });
+            // Use the already-computed assignments (preserves consolidation choices)
+            await executeAssignments(result.assignments, outputDir);
         }
     }
 }

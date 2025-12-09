@@ -2,13 +2,105 @@ import path from "path";
 import ora from "ora";
 import { logger } from "../utils/logger.js";
 import { findComicFiles, getFilename, moveFile } from "../utils/files.js";
-import { batchGetMetadata, groupByFolder } from "../services/metadata.js";
+import { batchGetMetadata } from "../services/metadata.js";
+import { runConsolidation } from "./consolidate.js";
+
+/**
+ * Build assignments from metadata results
+ */
+function buildAssignments(files, metadataResults) {
+    return files.map((file, index) => ({
+        file,
+        folder: metadataResults[index].suggestedFolder,
+        metadata: metadataResults[index],
+    }));
+}
+
+/**
+ * Group assignments by folder for display
+ */
+function groupAssignments(assignments) {
+    const groups = {};
+    for (const assignment of assignments) {
+        if (!groups[assignment.folder]) {
+            groups[assignment.folder] = [];
+        }
+        groups[assignment.folder].push(assignment);
+    }
+    return groups;
+}
+
+/**
+ * Show organization plan
+ */
+function showOrganizationPlan(groups) {
+    const folderCount = Object.keys(groups).length;
+    logger.section(`Organization Plan (${folderCount} folders)`);
+
+    for (const [folder, items] of Object.entries(groups)) {
+        logger.folder(folder, items.length);
+        items.slice(0, 3).forEach((item) => {
+            logger.file(getFilename(item.file), item.metadata?.confidence || "");
+        });
+        if (items.length > 3) {
+            logger.info(`    ... and ${items.length - 3} more`);
+        }
+    }
+}
+
+/**
+ * Execute moves for pre-computed assignments (used after dry run confirmation)
+ */
+export async function executeAssignments(assignments, outputDir) {
+    logger.section("Moving files");
+
+    const moveSpinner = ora("Moving files...").start();
+    const errors = [];
+    let moved = 0;
+
+    for (const assignment of assignments) {
+        const destFolder = path.join(outputDir, assignment.folder);
+
+        try {
+            await moveFile(assignment.file, destFolder);
+            moved++;
+            moveSpinner.text = `Moved ${moved}/${assignments.length} files`;
+        } catch (error) {
+            errors.push({
+                file: assignment.file,
+                error: error.message,
+            });
+        }
+    }
+
+    if (errors.length === 0) {
+        moveSpinner.succeed(`Successfully moved ${moved} files`);
+    } else {
+        moveSpinner.warn(`Moved ${moved} files with ${errors.length} errors`);
+    }
+
+    // Show summary
+    const folders = new Set(assignments.map((a) => a.folder));
+    logger.section("Summary");
+    logger.stats("Total files", assignments.length);
+    logger.stats("Files moved", moved);
+    logger.stats("Folders created", folders.size);
+
+    if (errors.length > 0) {
+        logger.stats("Errors", errors.length);
+        logger.newline();
+        logger.error("Files with errors:");
+        errors.forEach((e) => logger.file(e.file, e.error));
+    }
+
+    return { processed: assignments.length, moved, errors };
+}
 
 /**
  * Automated organization using metadata lookup
  */
 export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
-    const { dryRun = false, useApi = true } = options;
+    const { dryRun = false, useApi = true, skipConsolidation = false } = options;
 
     logger.section("Scanning for comic files");
 
@@ -18,7 +110,7 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
 
     if (files.length === 0) {
         logger.warning("No comic files found in the specified directory");
-        return { processed: 0, moved: 0, errors: [] };
+        return { processed: 0, moved: 0, errors: [], assignments: [] };
     }
 
     // Show found files
@@ -33,14 +125,12 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
     logger.section("Analyzing files for metadata");
 
     const analyzeSpinner = ora("Looking up metadata...").start();
-    let processed = 0;
 
     const metadataResults = await batchGetMetadata(
         files.map((f) => getFilename(f)),
         {
             useApi,
             onProgress: (current, total, meta) => {
-                processed = current;
                 analyzeSpinner.text = `Analyzing ${current}/${total}: ${meta.cleanedName}`;
             },
         }
@@ -48,20 +138,22 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
 
     analyzeSpinner.succeed(`Analyzed ${metadataResults.length} files`);
 
-    // Group by folder
-    const groups = groupByFolder(metadataResults);
-    const folderCount = Object.keys(groups).length;
+    // Build assignments
+    let assignments = buildAssignments(files, metadataResults);
 
-    logger.section(`Organization Plan (${folderCount} folders)`);
+    // Show initial plan
+    let groups = groupAssignments(assignments);
+    showOrganizationPlan(groups);
 
-    // Show organization preview
-    for (const [folder, items] of Object.entries(groups)) {
-        logger.folder(folder, items.length);
-        items.slice(0, 3).forEach((item) => {
-            logger.file(item.originalFilename, item.confidence);
-        });
-        if (items.length > 3) {
-            logger.info(`    ... and ${items.length - 3} more`);
+    // Offer consolidation if not skipped and not in dry run with execution pending
+    if (!skipConsolidation && Object.keys(groups).length > 1) {
+        assignments = await runConsolidation(assignments);
+        groups = groupAssignments(assignments);
+
+        // Show updated plan if consolidation happened
+        const wasConsolidated = assignments.some((a) => a.consolidated);
+        if (wasConsolidated) {
+            showOrganizationPlan(groups);
         }
     }
 
@@ -73,10 +165,8 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
         // Show what would happen
         for (const [folder, items] of Object.entries(groups)) {
             for (const item of items) {
-                const sourceIndex = metadataResults.indexOf(item);
-                const sourcePath = files[sourceIndex];
-                const destPath = path.join(outputDir, folder, item.originalFilename);
-                logger.preview(sourcePath, destPath);
+                const destPath = path.join(outputDir, folder, getFilename(item.file));
+                logger.preview(item.file, destPath);
             }
         }
 
@@ -85,6 +175,7 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
             moved: 0,
             wouldMove: files.length,
             errors: [],
+            assignments,
         };
     }
 
@@ -95,22 +186,18 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
     const errors = [];
     let moved = 0;
 
-    for (const [folder, items] of Object.entries(groups)) {
-        for (const item of items) {
-            const sourceIndex = metadataResults.indexOf(item);
-            const sourcePath = files[sourceIndex];
-            const destFolder = path.join(outputDir, folder);
+    for (const assignment of assignments) {
+        const destFolder = path.join(outputDir, assignment.folder);
 
-            try {
-                await moveFile(sourcePath, destFolder);
-                moved++;
-                moveSpinner.text = `Moved ${moved}/${files.length} files`;
-            } catch (error) {
-                errors.push({
-                    file: sourcePath,
-                    error: error.message,
-                });
-            }
+        try {
+            await moveFile(assignment.file, destFolder);
+            moved++;
+            moveSpinner.text = `Moved ${moved}/${files.length} files`;
+        } catch (error) {
+            errors.push({
+                file: assignment.file,
+                error: error.message,
+            });
         }
     }
 
@@ -124,7 +211,7 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
     logger.section("Summary");
     logger.stats("Total files", files.length);
     logger.stats("Files moved", moved);
-    logger.stats("Folders created", folderCount);
+    logger.stats("Folders created", Object.keys(groups).length);
 
     if (errors.length > 0) {
         logger.stats("Errors", errors.length);
@@ -133,5 +220,5 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
         errors.forEach((e) => logger.file(e.file, e.error));
     }
 
-    return { processed: files.length, moved, errors };
+    return { processed: files.length, moved, errors, assignments };
 }
