@@ -102,7 +102,7 @@ async function lookupGoogleBooks(query) {
 }
 
 /**
- * Extract metadata from filename using pattern matching and optional API lookup
+ * Extract metadata from filename using API lookup first, falling back to pattern matching
  */
 export async function getComicMetadata(filename, options = {}) {
     const { useApi = true } = options;
@@ -111,48 +111,50 @@ export async function getComicMetadata(filename, options = {}) {
     const issueNumber = extractIssueNumber(filename);
     const year = extractYear(filename);
 
-    // Try pattern matching first
-    const patternMatch = detectSeriesFromPatterns(filename);
-    const detectedPublisher = detectPublisher(filename);
-
     let metadata = {
         originalFilename: filename,
         cleanedName: cleanName,
         issueNumber,
         year,
-        series: patternMatch?.series || null,
-        publisher: patternMatch?.publisher || detectedPublisher || null,
+        series: null,
+        publisher: null,
         suggestedFolder: null,
         confidence: "low",
         source: "filename-analysis",
     };
 
-    // If we found a pattern match, we're fairly confident
-    if (patternMatch) {
-        metadata.confidence = "high";
-        metadata.suggestedFolder = `${metadata.publisher}/${metadata.series}`;
-    } else if (detectedPublisher) {
-        metadata.confidence = "medium";
-        metadata.suggestedFolder = `${detectedPublisher}/${cleanName}`;
-    }
-
-    // Try Google Books API for more info if enabled
-    if (useApi && metadata.confidence !== "high") {
+    // Try Google Books API first if enabled
+    if (useApi) {
         const apiResult = await lookupGoogleBooks(cleanName);
-        if (apiResult) {
+        if (apiResult && apiResult.publisher) {
             metadata = {
                 ...metadata,
                 ...apiResult,
-                series: metadata.series || apiResult.title,
-                publisher: metadata.publisher || apiResult.publisher,
+                series: apiResult.title,
+                publisher: apiResult.publisher,
+                suggestedFolder: `${apiResult.publisher}/${apiResult.title}`,
+                confidence: "high",
                 source: "api-lookup",
             };
-
-            if (apiResult.publisher) {
-                metadata.suggestedFolder = `${apiResult.publisher}/${apiResult.title}`;
-                metadata.confidence = "high";
-            }
+            return metadata;
         }
+    }
+
+    // Fall back to built-in pattern matching
+    const patternMatch = detectSeriesFromPatterns(filename);
+    const detectedPublisher = detectPublisher(filename);
+
+    metadata.series = patternMatch?.series || null;
+    metadata.publisher = patternMatch?.publisher || detectedPublisher || null;
+
+    if (patternMatch) {
+        metadata.confidence = "high";
+        metadata.suggestedFolder = `${metadata.publisher}/${metadata.series}`;
+        metadata.source = "pattern-match";
+    } else if (detectedPublisher) {
+        metadata.confidence = "medium";
+        metadata.suggestedFolder = `${detectedPublisher}/${cleanName}`;
+        metadata.source = "publisher-detection";
     }
 
     // Fallback: use cleaned name as series
