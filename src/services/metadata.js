@@ -10,6 +10,32 @@ const GOOGLE_BOOKS_API = "https://www.googleapis.com/books/v1/volumes";
 // Common comic publishers
 const PUBLISHERS = ["Marvel", "DC Comics", "DC", "Image", "Dark Horse", "IDW", "Vertigo", "Boom! Studios", "BOOM", "Dynamite", "Valiant", "Oni Press", "Archie", "Titan", "AWA", "AfterShock"];
 
+// Publisher name normalization (map variations to canonical names)
+const PUBLISHER_ALIASES = {
+    "dark horse comics": "Dark Horse",
+    "dark horse": "Dark Horse",
+    "dc comics": "DC Comics",
+    dc: "DC Comics",
+    "marvel comics": "Marvel",
+    marvel: "Marvel",
+    "image comics": "Image",
+    image: "Image",
+    "boom! studios": "BOOM! Studios",
+    "boom studios": "BOOM! Studios",
+    boom: "BOOM! Studios",
+    "idw publishing": "IDW",
+    idw: "IDW",
+};
+
+/**
+ * Normalize publisher name to canonical form
+ */
+function normalizePublisher(publisher) {
+    if (!publisher) return null;
+    const normalized = PUBLISHER_ALIASES[publisher.toLowerCase()];
+    return normalized || publisher;
+}
+
 // Common series patterns to detect
 const SERIES_PATTERNS = [
     { pattern: /batman/i, series: "Batman", publisher: "DC Comics" },
@@ -127,12 +153,13 @@ export async function getComicMetadata(filename, options = {}) {
     if (useApi) {
         const apiResult = await lookupGoogleBooks(cleanName);
         if (apiResult && apiResult.publisher) {
+            const normalizedPub = normalizePublisher(apiResult.publisher);
             metadata = {
                 ...metadata,
                 ...apiResult,
                 series: apiResult.title,
-                publisher: apiResult.publisher,
-                suggestedFolder: `${apiResult.publisher}/${apiResult.title}`,
+                publisher: normalizedPub,
+                suggestedFolder: `${normalizedPub}/${apiResult.title}`,
                 confidence: "high",
                 source: "api-lookup",
             };
@@ -144,16 +171,19 @@ export async function getComicMetadata(filename, options = {}) {
     const patternMatch = detectSeriesFromPatterns(filename);
     const detectedPublisher = detectPublisher(filename);
 
+    const normalizedPatternPub = normalizePublisher(patternMatch?.publisher);
+    const normalizedDetectedPub = normalizePublisher(detectedPublisher);
+
     metadata.series = patternMatch?.series || null;
-    metadata.publisher = patternMatch?.publisher || detectedPublisher || null;
+    metadata.publisher = normalizedPatternPub || normalizedDetectedPub || null;
 
     if (patternMatch) {
         metadata.confidence = "high";
         metadata.suggestedFolder = `${metadata.publisher}/${metadata.series}`;
         metadata.source = "pattern-match";
-    } else if (detectedPublisher) {
+    } else if (normalizedDetectedPub) {
         metadata.confidence = "medium";
-        metadata.suggestedFolder = `${detectedPublisher}/${cleanName}`;
+        metadata.suggestedFolder = `${normalizedDetectedPub}/${cleanName}`;
         metadata.source = "publisher-detection";
     }
 

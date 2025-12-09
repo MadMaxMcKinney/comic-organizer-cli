@@ -177,8 +177,11 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
     let groups = groupAssignments(assignments);
     showOrganizationPlan(groups);
 
-    // Offer consolidation if not skipped and not in dry run with execution pending
-    if (!skipConsolidation && Object.keys(groups).length > 1) {
+    // Offer consolidation if not skipped
+    // Run if: multiple folders OR single folder with multiple files (for within-folder grouping)
+    const totalFiles = assignments.length;
+    const folderCount = Object.keys(groups).length;
+    if (!skipConsolidation && (folderCount > 1 || totalFiles > 1)) {
         assignments = await runConsolidation(assignments);
         groups = groupAssignments(assignments);
 
