@@ -202,7 +202,7 @@ async function getOutputDirectory(sourceDir) {
                 type: "confirm",
                 name: "confirm",
                 message: "Files will be organized in-place. Continue?",
-                default: false,
+                default: true,
             },
         ]);
 
