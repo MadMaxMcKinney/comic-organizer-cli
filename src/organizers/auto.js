@@ -31,6 +31,35 @@ function groupAssignments(assignments) {
 }
 
 /**
+ * Simplify folders for single files
+ * If a folder only has 1 file and has a nested path (Publisher/Title),
+ * simplify to just the publisher folder
+ */
+function simplifySingleFileAssignments(assignments) {
+    // Group by folder to find single-file folders
+    const groups = groupAssignments(assignments);
+
+    return assignments.map((assignment) => {
+        const folderFiles = groups[assignment.folder];
+        const pathParts = assignment.folder.split("/");
+
+        // Only simplify if:
+        // 1. This folder has exactly 1 file
+        // 2. The path has more than 1 segment (e.g., Publisher/Title)
+        // 3. The first segment isn't "Unsorted"
+        if (folderFiles.length === 1 && pathParts.length > 1 && pathParts[0] !== "Unsorted") {
+            return {
+                ...assignment,
+                folder: pathParts[0], // Just use the publisher folder
+                simplified: true,
+            };
+        }
+
+        return assignment;
+    });
+}
+
+/**
  * Show organization plan
  */
 function showOrganizationPlan(groups) {
@@ -140,6 +169,9 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
 
     // Build assignments
     let assignments = buildAssignments(files, metadataResults);
+
+    // Simplify single-file folders (put directly in publisher folder)
+    assignments = simplifySingleFileAssignments(assignments);
 
     // Show initial plan
     let groups = groupAssignments(assignments);
