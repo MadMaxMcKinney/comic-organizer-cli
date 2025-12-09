@@ -205,7 +205,7 @@ export async function runManualOrganizer(sourceDir, outputDir, configPath, optio
 
     if (dryRun) {
         logger.newline();
-        logger.warning("DRY RUN - No files have been moved");
+        logger.warning("PREVIEW - No files have been moved");
         logger.newline();
 
         for (const { file, folder } of assignments) {

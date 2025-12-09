@@ -6,7 +6,6 @@ import { directoryExists, fileExists, findComicFiles } from "./utils/files.js";
 import { runAutoOrganizer, executeAssignments } from "./organizers/auto.js";
 import { runManualOrganizer } from "./organizers/manual.js";
 
-const DEFAULT_OUTPUT_DIR = "./organized-comics";
 const DEFAULT_CONFIG_FILE = "./filters.json";
 
 /**
@@ -158,7 +157,7 @@ async function getSourceDirectory() {
  * Get output directory from user
  */
 async function getOutputDirectory(sourceDir) {
-    const defaultOutput = path.join(path.dirname(sourceDir), "organized-comics");
+    const defaultOutput = sourceDir;
 
     const { outputDir } = await inquirer.prompt([
         {
@@ -228,7 +227,7 @@ async function getAutoOptions() {
         {
             type: "confirm",
             name: "dryRun",
-            message: "Run in preview mode? (no files will be moved)",
+            message: "Preview output first? (no files will be moved)",
             default: true,
         },
     ]);
@@ -250,7 +249,7 @@ async function getManualOptions() {
         {
             type: "confirm",
             name: "dryRun",
-            message: "Run in preview mode? (no files will be moved)",
+            message: "Preview output first? (no files will be moved)",
             default: true,
         },
     ]);

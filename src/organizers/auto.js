@@ -78,7 +78,7 @@ function showOrganizationPlan(groups) {
 }
 
 /**
- * Execute moves for pre-computed assignments (used after dry run confirmation)
+ * Execute moves for pre-computed assignments (used after preview confirmation)
  */
 export async function executeAssignments(assignments, outputDir) {
     logger.section("Moving files");
@@ -194,7 +194,7 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
 
     if (dryRun) {
         logger.newline();
-        logger.warning("DRY RUN - No files have been moved");
+        logger.warning("PREVIEW - No files have been moved");
         logger.newline();
 
         // Show what would happen
