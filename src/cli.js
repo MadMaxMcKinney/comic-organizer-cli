@@ -6,6 +6,7 @@ import { directoryExists, fileExists, findComicFiles } from "./utils/files.js";
 import { runAutoOrganizer, executeAssignments } from "./organizers/auto.js";
 import { runManualOrganizer } from "./organizers/manual.js";
 import { runFlattenOrganizer } from "./organizers/flatten.js";
+import { runPostProcessing, runPostProcessingStandalone } from "./services/postProcessing.js";
 
 const DEFAULT_CONFIG_FILE = "./filters.json";
 
@@ -40,6 +41,10 @@ async function selectMode() {
                 {
                     name: "📦 Flatten hierarchy - Move all comics to root folder",
                     value: "flatten",
+                },
+                {
+                    name: "⚙️  Post-processing only - Run post-processing on a directory",
+                    value: "postprocess",
                 },
                 {
                     name: "❓ Help - Learn more about each option",
@@ -311,6 +316,8 @@ async function runAutoFlow() {
 
     const result = await runAutoOrganizer(sourceDir, outputDir, options);
 
+    let filesWereMoved = false;
+
     if (options.dryRun && result.wouldMove > 0 && result.assignments) {
         logger.newline();
         const { execute } = await inquirer.prompt([
@@ -325,7 +332,15 @@ async function runAutoFlow() {
         if (execute) {
             // Use the already-computed assignments (preserves consolidation choices)
             await executeAssignments(result.assignments, outputDir);
+            filesWereMoved = true;
         }
+    } else if (!options.dryRun && result.moved > 0) {
+        filesWereMoved = true;
+    }
+
+    // Run post-processing if files were actually moved
+    if (filesWereMoved) {
+        await runPostProcessing(sourceDir, outputDir);
     }
 }
 
@@ -344,6 +359,8 @@ async function runManualFlow() {
 
     const result = await runManualOrganizer(sourceDir, outputDir, configPath, options);
 
+    let filesWereMoved = false;
+
     if (options.dryRun && result.wouldMove > 0) {
         logger.newline();
         const { execute } = await inquirer.prompt([
@@ -357,7 +374,15 @@ async function runManualFlow() {
 
         if (execute) {
             await runManualOrganizer(sourceDir, outputDir, configPath, { ...options, dryRun: false });
+            filesWereMoved = true;
         }
+    } else if (!options.dryRun && result.moved > 0) {
+        filesWereMoved = true;
+    }
+
+    // Run post-processing if files were actually moved
+    if (filesWereMoved) {
+        await runPostProcessing(sourceDir, outputDir);
     }
 }
 
@@ -370,6 +395,8 @@ async function runFlattenFlow() {
 
     // Preview first
     const result = await runFlattenOrganizer(sourceDir, { dryRun: true });
+
+    let filesWereMoved = false;
 
     if (result.wouldMove > 0) {
         logger.newline();
@@ -384,8 +411,25 @@ async function runFlattenFlow() {
 
         if (execute) {
             await runFlattenOrganizer(sourceDir, { dryRun: false });
+            filesWereMoved = true;
         }
     }
+
+    // Run post-processing if files were actually moved
+    if (filesWereMoved) {
+        await runPostProcessing(sourceDir, sourceDir);
+    }
+}
+
+/**
+ * Run post-processing only flow
+ */
+async function runPostProcessingFlow() {
+    const targetDir = await getSourceDirectory();
+    if (!targetDir) return;
+
+    logger.newline();
+    await runPostProcessingStandalone(targetDir);
 }
 
 /**
@@ -410,6 +454,10 @@ export async function runCLI() {
 
             case "flatten":
                 await runFlattenFlow();
+                break;
+
+            case "postprocess":
+                await runPostProcessingFlow();
                 break;
 
             case "help":
