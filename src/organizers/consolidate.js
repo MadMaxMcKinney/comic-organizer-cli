@@ -17,7 +17,7 @@ function normalizeForComparison(str) {
 
 /**
  * Extract potential series name from a string (folder path or filename)
- * More forgiving pattern matching
+ * More forgiving pattern matching - strips version/volume/issue numbers
  */
 function extractSeriesName(input, isFilename = false) {
     let name = isFilename ? input.replace(/\.[^.]+$/, "") : input.split("/").pop();
@@ -32,6 +32,10 @@ function extractSeriesName(input, isFilename = false) {
 
     // Common patterns to extract series name (order matters - most specific first)
     const patterns = [
+        // "Speed Racer 003 (2025)" -> "Speed Racer" (issue number with year)
+        /^(.+?)(?:\s+\d{3,}\s*\(\d{4}\))/i,
+        // "Geiger V04 (2025)" or "The Power Fantasy v02" -> "Geiger" / "The Power Fantasy"
+        /^(.+?)(?:\s+[Vv]\d+)/i,
         // "Hellboy: The Bride of Hell" -> "Hellboy"
         /^(.+?)(?:\s*:\s*)/i,
         // "Hellboy Volume 11" or "Hellboy Vol. 2" -> "Hellboy"
@@ -44,8 +48,10 @@ function extractSeriesName(input, isFilename = false) {
         /^(.+?)(?:\s*\(\d{4}\))/i,
         // "Hellboy - Something" -> "Hellboy"
         /^(.+?)(?:\s*[-–—]\s*)/i,
-        // "Hellboy 001" -> "Hellboy"
-        /^(.+?)(?:\s+\d{2,})/i,
+        // "Hellboy 001" -> "Hellboy" (3+ digit numbers)
+        /^(.+?)(?:\s+\d{3,})/i,
+        // "Speed Racer 3" -> "Speed Racer" (1-2 digit numbers at end)
+        /^(.+?)(?:\s+\d{1,2})$/i,
         // "hellboy001" or "hellboy 1" -> "hellboy" (for filenames)
         /^([a-z]+?)(?:\d+)/i,
         // Fallback: first word if multiple words
