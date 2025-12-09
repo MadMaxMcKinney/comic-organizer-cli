@@ -7,7 +7,6 @@ An interactive CLI application for organizing your digital comic collection. Sup
 - **🤖 Automatic Organization**: Analyzes filenames to detect publishers, series, and issue numbers. Uses pattern matching and optional Google Books API lookup.
 - **📋 Manual Organization**: Use a JSON configuration file with regex patterns to define your own folder structure.
 - **🔍 Preview Mode**: See exactly what will happen before any files are moved.
-- **📁 Nested Folders**: Create deep folder hierarchies (Publisher/Series/Sub-series).
 - **🎨 Beautiful CLI**: Color-coded output with progress indicators.
 
 ## Installation
@@ -21,10 +20,6 @@ npm install
 
 # Run the application
 npm start
-
-# Or link it globally
-npm link
-comic-organizer
 ```
 
 ## Usage
@@ -132,21 +127,6 @@ organized-comics/
     └── Batman 123.cbr
 ```
 
-## Configuration Options
-
-### Automatic Mode Options
-- **Use Google Books API**: Enable/disable API lookups for better metadata
-- **Preview Mode**: Show what would happen without moving files
-
-### Manual Mode Options
-- **Include Unmatched**: Move files that don't match any filter to "_Unmatched" folder
-- **Preview Mode**: Show what would happen without moving files
-
-## Supported File Types
-
-`.cbr`, `.cbz`, `.pdf`, `.epub` are the only supported file types.
-
-
 ## Example Filter Configurations
 
 ### By Publisher Only
@@ -181,6 +161,10 @@ organized-comics/
   ]
 }
 ```
+
+## Supported File Types
+
+`.cbr`, `.cbz`, `.pdf`, `.epub` are the only supported file types.
 
 ## License
 
