@@ -12,66 +12,6 @@ import { getComicMetadata } from "../services/metadata.js";
  */
 const RENAME_FORMATS = [
     {
-        name: "Publisher - Series - Issue #123 (Year)",
-        value: "publisher-series-issue-year",
-        example: "Marvel - Spider-Man - Issue #001 (2023).cbz",
-        format: (meta, ext) => {
-            const parts = [];
-            if (meta.publisher) parts.push(meta.publisher);
-            if (meta.series) parts.push(meta.series);
-            if (meta.issueNumber !== null) parts.push(`Issue #${String(meta.issueNumber).padStart(3, "0")}`);
-            if (meta.year) parts.push(`(${meta.year})`);
-            return parts.length > 0 ? parts.join(" - ") + ext : null;
-        },
-    },
-    {
-        name: "Series - #123 (Year)",
-        value: "series-issue-year",
-        example: "Spider-Man - #001 (2023).cbz",
-        format: (meta, ext) => {
-            const parts = [];
-            if (meta.series) parts.push(meta.series);
-            if (meta.issueNumber !== null) parts.push(`#${String(meta.issueNumber).padStart(3, "0")}`);
-            if (meta.year) parts.push(`(${meta.year})`);
-            return parts.length > 0 ? parts.join(" - ") + ext : null;
-        },
-    },
-    {
-        name: "Series #123",
-        value: "series-issue",
-        example: "Spider-Man #001.cbz",
-        format: (meta, ext) => {
-            if (meta.series && meta.issueNumber !== null) {
-                return `${meta.series} #${String(meta.issueNumber).padStart(3, "0")}${ext}`;
-            }
-            return null;
-        },
-    },
-    {
-        name: "Publisher - Series (Year)",
-        value: "publisher-series-year",
-        example: "Marvel - Spider-Man (2023).cbz",
-        format: (meta, ext) => {
-            const parts = [];
-            if (meta.publisher) parts.push(meta.publisher);
-            if (meta.series) parts.push(meta.series);
-            if (meta.year) parts.push(`(${meta.year})`);
-            return parts.length > 0 ? parts.join(" - ") + ext : null;
-        },
-    },
-    {
-        name: "Series_Issue_Year (underscores)",
-        value: "series-issue-year-underscores",
-        example: "Spider-Man_001_2023.cbz",
-        format: (meta, ext) => {
-            const parts = [];
-            if (meta.series) parts.push(meta.series.replace(/\s+/g, "_"));
-            if (meta.issueNumber !== null) parts.push(String(meta.issueNumber).padStart(3, "0"));
-            if (meta.year) parts.push(meta.year);
-            return parts.length > 0 ? parts.join("_") + ext : null;
-        },
-    },
-    {
         name: "Smart Format (handles TPB, Omnibus, One-shots)",
         value: "smart-format",
         example: "Spider-Man Vol 01 2023.cbz or Batman Omnibus 2024.cbz",
@@ -129,6 +69,66 @@ const RENAME_FORMATS = [
             }
 
             return parts.join(" ") + ext;
+        },
+    },
+    {
+        name: "Publisher - Series - Issue #123 (Year)",
+        value: "publisher-series-issue-year",
+        example: "Marvel - Spider-Man - Issue #001 (2023).cbz",
+        format: (meta, ext) => {
+            const parts = [];
+            if (meta.publisher) parts.push(meta.publisher);
+            if (meta.series) parts.push(meta.series);
+            if (meta.issueNumber !== null) parts.push(`Issue #${String(meta.issueNumber).padStart(3, "0")}`);
+            if (meta.year) parts.push(`(${meta.year})`);
+            return parts.length > 0 ? parts.join(" - ") + ext : null;
+        },
+    },
+    {
+        name: "Series - #123 (Year)",
+        value: "series-issue-year",
+        example: "Spider-Man - #001 (2023).cbz",
+        format: (meta, ext) => {
+            const parts = [];
+            if (meta.series) parts.push(meta.series);
+            if (meta.issueNumber !== null) parts.push(`#${String(meta.issueNumber).padStart(3, "0")}`);
+            if (meta.year) parts.push(`(${meta.year})`);
+            return parts.length > 0 ? parts.join(" - ") + ext : null;
+        },
+    },
+    {
+        name: "Series #123",
+        value: "series-issue",
+        example: "Spider-Man #001.cbz",
+        format: (meta, ext) => {
+            if (meta.series && meta.issueNumber !== null) {
+                return `${meta.series} #${String(meta.issueNumber).padStart(3, "0")}${ext}`;
+            }
+            return null;
+        },
+    },
+    {
+        name: "Publisher - Series (Year)",
+        value: "publisher-series-year",
+        example: "Marvel - Spider-Man (2023).cbz",
+        format: (meta, ext) => {
+            const parts = [];
+            if (meta.publisher) parts.push(meta.publisher);
+            if (meta.series) parts.push(meta.series);
+            if (meta.year) parts.push(`(${meta.year})`);
+            return parts.length > 0 ? parts.join(" - ") + ext : null;
+        },
+    },
+    {
+        name: "Series_Issue_Year (underscores)",
+        value: "series-issue-year-underscores",
+        example: "Spider-Man_001_2023.cbz",
+        format: (meta, ext) => {
+            const parts = [];
+            if (meta.series) parts.push(meta.series.replace(/\s+/g, "_"));
+            if (meta.issueNumber !== null) parts.push(String(meta.issueNumber).padStart(3, "0"));
+            if (meta.year) parts.push(meta.year);
+            return parts.length > 0 ? parts.join("_") + ext : null;
         },
     },
 ];
