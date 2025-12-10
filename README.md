@@ -69,6 +69,19 @@ npm start
   ...
 ```
 
+## Automatic Organization
+
+The automatic organizer analyzes filenames to detect publishers, series, and issue numbers. It also fetches metadata from the Google Books API to improve accuracy. It will try to create a sensible folder structure based on the detected information, including an initial pass at establishing series folders.
+
+Having accurate filenames greatly improves the results. The more consistent your filenames are, the better the organization will be. That said, the automatic organizer is designed to handle a variety of naming conventions and inconsistencies.
+
+### Static Pattern Matching
+
+To supplement the automatic organization via fetching metadata, the system will also use pattern matching on filenames/fetched metadata to detect publishers and series. This helps catch files that may not have good metadata available. Pattern matching is case-insensitive and always has priority over fetched metadata.
+
+Want to add your own patterns? You can customize the static patterns used by editing the `seriesPatterns.js` and `publisherPatterns.js` files in the project `src/patterns` directory. This would be a great way to contribute back if you have patterns for lesser-known series or publishers!
+
+
 ## Manual Organization with filters.json
 
 Create a `filters.json` file to define your organization rules:
