@@ -14,7 +14,7 @@ const DEFAULT_CONFIG_FILE = "./filters.json";
  * Display welcome banner
  */
 function showBanner() {
-    logger.title("COMIC ORGANIZER");
+    logger.title("COMIC ORGANIZER CLI");
     console.log(chalk.dim("  Organize your digital comic collection with ease"));
     console.log(chalk.dim("  Supports: .cbr, .cbz, .pdf, .epub"));
     logger.newline();

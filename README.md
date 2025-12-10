@@ -42,7 +42,7 @@ pnpm start
 
 ```
 ═══════════════════════════════════════════════════════════
-  📚 COMIC ORGANIZER
+  📚 COMIC ORGANIZER CLI
 ═══════════════════════════════════════════════════════════
 
 ? How would you like to organize your comics?
