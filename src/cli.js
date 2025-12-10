@@ -155,8 +155,12 @@ async function getSourceDirectory() {
 
     const fullPath = path.resolve(sourceDir);
 
+    return fullPath;
+}
+
+async function showQuickPreviewOfDirectory(pathToDir, options = { recursive: false }) {
     // Quick scan to show file count
-    const files = await findComicFiles(fullPath);
+    const files = await findComicFiles(pathToDir, { recursive: options.recursive });
     logger.info(`Found ${files.length} comic files in this directory`);
 
     if (files.length === 0) {
@@ -173,8 +177,6 @@ async function getSourceDirectory() {
             return null;
         }
     }
-
-    return fullPath;
 }
 
 /**
@@ -308,6 +310,7 @@ async function askContinue() {
 async function runAutoFlow() {
     const sourceDir = await getSourceDirectory();
     if (!sourceDir) return;
+    await showQuickPreviewOfDirectory(sourceDir);
 
     const outputDir = await getOutputDirectory(sourceDir);
     const options = await getAutoOptions();
@@ -350,6 +353,7 @@ async function runAutoFlow() {
 async function runManualFlow() {
     const sourceDir = await getSourceDirectory();
     if (!sourceDir) return;
+    await showQuickPreviewOfDirectory(sourceDir);
 
     const outputDir = await getOutputDirectory(sourceDir);
     const configPath = await getConfigFile();
@@ -392,6 +396,7 @@ async function runManualFlow() {
 async function runFlattenFlow() {
     const sourceDir = await getSourceDirectory();
     if (!sourceDir) return;
+    await showQuickPreviewOfDirectory(sourceDir, { recursive: true });
 
     // Preview first
     const result = await runFlattenOrganizer(sourceDir, { dryRun: true });
@@ -427,6 +432,7 @@ async function runFlattenFlow() {
 async function runPostProcessingFlow() {
     const targetDir = await getSourceDirectory();
     if (!targetDir) return;
+    await showQuickPreviewOfDirectory(targetDir);
 
     logger.newline();
     await runPostProcessingStandalone(targetDir);

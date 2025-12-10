@@ -13,7 +13,7 @@ const COMIC_EXTENSIONS = [".cbr", ".cbz", ".pdf", ".epub"];
 export async function findComicFiles(directory, options = {}) {
     const { recursive = false } = options;
     const pattern = recursive ? path.join(directory, "**/*") : path.join(directory, "*");
-    const allFiles = await glob(pattern, { nodir: true });
+    const allFiles = await glob(pattern, { nodir: true, absolute: true });
 
     return allFiles.filter((file) => {
         const ext = path.extname(file).toLowerCase();

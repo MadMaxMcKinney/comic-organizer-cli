@@ -3,7 +3,7 @@ import ora from "ora";
 import fs from "fs-extra";
 import inquirer from "inquirer";
 import { logger } from "../utils/logger.js";
-import { findComicFiles, getFilename, moveFile } from "../utils/files.js";
+import { findComicFiles, getFilename } from "../utils/files.js";
 
 /**
  * Find all subdirectories in a directory (recursively)
@@ -57,7 +57,7 @@ export async function runFlattenOrganizer(sourceDir, options = {}) {
     logger.section("Scanning for comic files");
 
     const spinner = ora("Finding comic files in all subdirectories...").start();
-    const allFiles = await findComicFiles(sourceDir);
+    const allFiles = await findComicFiles(sourceDir, { recursive: true });
     spinner.succeed(`Found ${allFiles.length} comic files`);
 
     // Separate files already in root from files in subdirectories
