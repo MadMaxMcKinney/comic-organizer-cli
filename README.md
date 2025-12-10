@@ -190,6 +190,11 @@ Found potential duplicates:
 
 Automatically rename files based on extracted metadata (including fetched metadata). Choose from multiple format options:
 
+- **Smart Format** (handles TPB, Omnibus, One-shots): 
+  - TPB: `Spider-Man Vol 01 2023.cbz`
+  - Omnibus: `Batman Omnibus Vol 2 2024.cbz`
+  - One-shot: `Superman One-Shot 2024.cbz`
+  - Regular issue: `X-Men 001 2023.cbz`
 - **Publisher - Series - Issue #123 (Year)**: `Marvel - Spider-Man - Issue #001 (2023).cbz`
 - **Series - #123 (Year)**: `Spider-Man - #001 (2023).cbz`
 - **Series #123**: `Spider-Man #001.cbz`

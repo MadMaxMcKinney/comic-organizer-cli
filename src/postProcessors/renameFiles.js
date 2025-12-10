@@ -71,6 +71,66 @@ const RENAME_FORMATS = [
             return parts.length > 0 ? parts.join("_") + ext : null;
         },
     },
+    {
+        name: "Smart Format (handles TPB, Omnibus, One-shots)",
+        value: "smart-format",
+        example: "Spider-Man Vol 01 2023.cbz or Batman Omnibus 2024.cbz",
+        format: (meta, ext) => {
+            if (!meta.series && !meta.cleanedName) return null;
+
+            const seriesName = meta.series || meta.cleanedName;
+            const parts = [seriesName];
+
+            // Detect special formats in the original filename
+            const originalLower = meta.originalFilename.toLowerCase();
+
+            // Check for TPB/Volume
+            if (originalLower.includes("tpb") || originalLower.includes("trade")) {
+                const volMatch = meta.originalFilename.match(/(?:vol\.?|volume)\s*(\d+)/i);
+                if (volMatch) {
+                    parts.push("Vol " + String(volMatch[1]).padStart(2, "0"));
+                } else {
+                    parts.push("TPB");
+                }
+            }
+            // Check for Omnibus
+            else if (originalLower.includes("omnibus") || originalLower.includes("omni")) {
+                const volMatch = meta.originalFilename.match(/(?:vol\.?|volume)\s*(\d+)/i);
+                if (volMatch) {
+                    parts.push("Omnibus Vol " + volMatch[1]);
+                } else {
+                    parts.push("Omnibus");
+                }
+            }
+            // Check for Book/Part
+            else if (originalLower.includes("book") || originalLower.includes("part")) {
+                const bookMatch = meta.originalFilename.match(/(?:book|part)\s*(\d+)/i);
+                if (bookMatch) {
+                    parts.push("Book " + String(bookMatch[1]).padStart(2, "0"));
+                }
+            }
+            // Check for One-shot indicators
+            else if (originalLower.includes("one-shot") || originalLower.includes("oneshot") || originalLower.includes("one shot")) {
+                parts.push("One-Shot");
+            }
+            // Regular issue number
+            else if (meta.issueNumber !== null) {
+                parts.push(String(meta.issueNumber).padStart(3, "0"));
+            }
+            // No number found - likely a one-shot or special
+            else if (!originalLower.match(/\d{3,}/)) {
+                // If no significant numbers, it might be a one-shot
+                parts.push("One-Shot");
+            }
+
+            // Add year if available
+            if (meta.year) {
+                parts.push(meta.year.toString());
+            }
+
+            return parts.join(" ") + ext;
+        },
+    },
 ];
 
 /**
