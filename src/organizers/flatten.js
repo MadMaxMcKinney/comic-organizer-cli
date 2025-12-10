@@ -1,6 +1,7 @@
 import path from "path";
 import ora from "ora";
 import fs from "fs-extra";
+import inquirer from "inquirer";
 import { logger } from "../utils/logger.js";
 import { findComicFiles, getFilename, moveFile } from "../utils/files.js";
 
@@ -101,6 +102,26 @@ export async function runFlattenOrganizer(sourceDir, options = {}) {
     logger.info(`All ${filesInSubdirs.length} files will be moved to: ${sourceDir}`);
     logger.info(`${subdirs.length} empty folders will be removed after flattening.`);
 
+    // Check for potential filename conflicts
+    const conflicts = [];
+    const existingFilenames = new Set(filesInRoot.map((f) => getFilename(f)));
+    for (const file of filesInSubdirs) {
+        const filename = getFilename(file);
+        if (existingFilenames.has(filename)) {
+            conflicts.push(filename);
+        }
+        existingFilenames.add(filename);
+    }
+
+    if (conflicts.length > 0) {
+        logger.newline();
+        logger.warning(`${conflicts.length} filename conflicts detected. Files will be renamed:`);
+        conflicts.slice(0, 5).forEach((name) => logger.file(name, "will be renamed"));
+        if (conflicts.length > 5) {
+            logger.info(`    ... and ${conflicts.length - 5} more`);
+        }
+    }
+
     if (dryRun) {
         logger.newline();
         logger.warning("PREVIEW - No files have been moved");
@@ -124,6 +145,22 @@ export async function runFlattenOrganizer(sourceDir, options = {}) {
             filesInSubdirs,
             subdirs,
         };
+    }
+
+    // Prompt for confirmation
+    logger.newline();
+    const { confirm } = await inquirer.prompt([
+        {
+            type: "confirm",
+            name: "confirm",
+            message: `Proceed with flattening ${filesInSubdirs.length} files?`,
+            default: false,
+        },
+    ]);
+
+    if (!confirm) {
+        logger.warning("Operation cancelled by user");
+        return { processed: 0, moved: 0, foldersRemoved: 0, errors: [], cancelled: true };
     }
 
     // Execute flattening
