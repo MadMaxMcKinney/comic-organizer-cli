@@ -167,6 +167,25 @@ organized-comics/
 
 After organizing your comics, you can run post-processing operations. These are also available as a standalone mode to process any directory.
 
+### Consolidate Folders
+
+Automatically detect and merge duplicate or similar folders based on folder name similarity. This is useful when the same series ends up in multiple folders due to naming variations.
+
+**Example:**
+```
+Found potential duplicates:
+  📁 Spider-Man (12 files) ↔️ Spiderman (5 files) - 95% similar
+  📁 X-Men (8 files) ↔️ X Men (3 files) - 90% similar
+  📁 Batman (15 files) ↔️ Batman - The Dark Knight (4 files) - 75% similar
+
+? Select folders to consolidate:
+  ✓ Spider-Man & Spiderman
+  ✓ X-Men & X Men
+  ○ Batman & Batman - The Dark Knight
+
+? Enter the name for the consolidated folder: Spider-Man
+```
+
 ### Rename Files
 
 Automatically rename files based on extracted metadata (including fetched metadata). Choose from multiple format options:
