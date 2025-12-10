@@ -5,11 +5,11 @@ An interactive CLI application for organizing your digital comic collection. Sup
 ## Features
 
 - **🤖 Automatic Organization**: Analyzes filenames to detect publishers, series, and issue numbers. Uses pattern matching and optional Google Books API lookup.
-- **📋 Manual Organization**: Use a JSON configuration file with regex patterns to define your own folder structure.
+- **📋 Manual Organization**: Use a JSON configuration file with regex patterns to define your own folder and sub-folder structure.
 - **📦 Flatten Hierarchy**: Move all comics from subdirectories to the root folder.
-- **⚙️ Post-Processing**: Rename files based on metadata after organization, or run post-processing operations on any directory.
-- **🔍 Preview Mode**: See exactly what will happen before any files are moved.
-- **🎨 Beautiful CLI**: Color-coded output with progress indicators.
+- **⚙️ Post-Processing**: Run useful operations on a directory, like renaming files based on metadata or combining duplicate/similar folders.
+- **🔍 Operate Safely**: See exactly what will happen before any files are moved or changed.
+- **🎨 Beautiful CLI**: Color-coded output with progress indicators and interactive inputs.
 
 ## Installation
 
@@ -25,6 +25,8 @@ npm start
 ```
 
 ## Usage
+
+The program will only discover files in the root of the chosen directory (chosen during the prompts), this way it avoids processing files in folders that are already organized. After running the organization process, all files will be moved into respective folders.
 
 Run the application and follow the interactive prompts:
 
@@ -50,7 +52,7 @@ You'll be presented with options to:
   🤖 Automatic - Analyze filenames and look up metadata
   📋 Manual - Use a JSON filter configuration file
   📦 Flatten hierarchy - Move all comics to root folder
-  ⚙️  Post-processing only - Run post-processing on a directory
+  ⚙️ Post-processing only - Run post-processing on a directory
   ❓ Help - Learn more about each option
   👋 Exit
 
