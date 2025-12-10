@@ -82,7 +82,7 @@ To supplement the automatic organization via fetching metadata, the system will 
 Want to add your own patterns? You can customize the static patterns used by editing the `seriesPatterns.js` and `publisherPatterns.js` files in the project `src/patterns` directory. This would be a great way to contribute back if you have patterns for lesser-known series or publishers!
 
 
-## Manual Organization with filters.json
+## Manual Organization
 
 Create a `filters.json` file to define your organization rules:
 
