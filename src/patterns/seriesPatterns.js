@@ -130,4 +130,10 @@ export const SERIES_PATTERNS = [
 
     // Other Publishers
     { pattern: /speed\s*racer/i, series: "Speed Racer", publisher: "Mad Cave" },
+    { pattern: /brzrkr|berzerker/i, series: "BRZRKR", publisher: "BOOM! Studios" },
+    { pattern: /godzilla.*kai\s*sei\s*era|kai\s*sei\s*era/i, series: "Godzilla (Kai Sei Era)", publisher: "IDW" },
+    { pattern: /godzilla.*kai\s*sei|kai\s*sei/i, series: "Godzilla (Kai Sei Era)", publisher: "IDW" },
+    { pattern: /high\s*strangeness/i, series: "High Strangeness", publisher: "Oni Press" },
+    { pattern: /mad\s*max\s*fury\s*road/i, series: "Mad Max Fury Road", publisher: "Vertigo" },
+    { pattern: /supernatural/i, series: "Supernatural", publisher: "Dynamite Entertainment" },
 ];
