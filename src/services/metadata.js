@@ -8,9 +8,9 @@ import { cleanFilenameForLookup, extractIssueNumber, extractYear } from "../util
 const GOOGLE_BOOKS_API = "https://www.googleapis.com/books/v1/volumes";
 
 // Common comic publishers
-const PUBLISHERS = ["Marvel", "DC Comics", "DC", "Image", "Dark Horse", "IDW", "Vertigo", "Boom! Studios", "BOOM", "Dynamite", "Valiant", "Oni Press", "Archie", "Titan", "AWA", "AfterShock"];
+const PUBLISHERS = ["Marvel", "DC Comics", "DC", "Image", "Dark Horse", "IDW", "Vertigo", "Boom! Studios", "Dynamite", "Valiant", "Oni Press", "Archie", "Titan", "AWA", "AfterShock"];
 
-// Publisher name normalization (map variations to canonical names)
+// Publisher name normalization (map variations to canonical names). Keep lower case keys.
 const PUBLISHER_ALIASES = {
     "dark horse comics": "Dark Horse",
     "dark horse": "Dark Horse",
@@ -28,12 +28,43 @@ const PUBLISHER_ALIASES = {
 };
 
 /**
+ * Check if publisher is a known comic publisher
+ */
+function isKnownComicPublisher(publisher) {
+    if (!publisher) return false;
+    const publisherLower = publisher.toLowerCase();
+
+    // Check if in PUBLISHER_ALIASES
+    if (PUBLISHER_ALIASES[publisherLower]) {
+        return true;
+    }
+
+    // Check if in PUBLISHERS list
+    return PUBLISHERS.some((known) => known.toLowerCase() === publisherLower);
+}
+
+/**
  * Normalize publisher name to canonical form
+ * Returns null if publisher is not a known comic publisher
  */
 function normalizePublisher(publisher) {
     if (!publisher) return null;
-    const normalized = PUBLISHER_ALIASES[publisher.toLowerCase()];
-    return normalized || publisher;
+
+    const publisherLower = publisher.toLowerCase();
+
+    // Check if it's in the aliases first
+    const normalized = PUBLISHER_ALIASES[publisherLower];
+    if (normalized) {
+        return normalized;
+    }
+
+    // Check if it's in the known publishers list
+    if (isKnownComicPublisher(publisher)) {
+        return publisher;
+    }
+
+    // Not a known comic publisher
+    return null;
 }
 
 // Common series patterns to detect
@@ -154,6 +185,20 @@ export async function getComicMetadata(filename, options = {}) {
         const apiResult = await lookupGoogleBooks(cleanName);
         if (apiResult && apiResult.publisher) {
             const normalizedPub = normalizePublisher(apiResult.publisher);
+
+            // If publisher was filtered out as non-comic, assign to Unsorted
+            if (!normalizedPub) {
+                metadata = {
+                    ...metadata,
+                    series: apiResult.title,
+                    publisher: "Unsorted",
+                    suggestedFolder: `Unsorted/${apiResult.title}`,
+                    confidence: "medium",
+                    source: "api-lookup-non-comic-publisher",
+                };
+                return metadata;
+            }
+
             metadata = {
                 ...metadata,
                 ...apiResult,
