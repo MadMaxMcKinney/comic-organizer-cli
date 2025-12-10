@@ -1,6 +1,8 @@
-# 📚 Comic Organizer CLI
+# Comic Organizer CLI
 
-<img width="100%" height="auto" alt="comic-organizer-cli-ex1" src="https://github.com/user-attachments/assets/28bd1517-8198-4ca5-ac7a-3980a2367e63" />
+<img width="100%" height="auto" alt="CleanShot 2025-12-09 at 20 47 44@2x" src="https://github.com/user-attachments/assets/b64b44ae-ee38-4724-8721-f080a92c82d7" />
+
+----
 
 An interactive CLI application for organizing your digital comic collection. Supports `.cbr`, `.cbz`, `.pdf`, and `.epub` files.
 
