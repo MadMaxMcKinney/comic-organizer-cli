@@ -22,10 +22,10 @@ An interactive CLI application for organizing your digital comic collection. Sup
 cd comic-organizer
 
 # Install dependencies
-npm install
+pnpm install
 
 # Run the application
-npm start
+pnpm start
 ```
 
 ## Usage
@@ -35,7 +35,7 @@ The program will only discover files in the root of the chosen directory (chosen
 Run the application and follow the interactive prompts:
 
 ```bash
-npm start
+pnpm start
 ```
 
 ### Example Session
