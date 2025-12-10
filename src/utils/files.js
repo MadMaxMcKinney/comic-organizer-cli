@@ -6,9 +6,13 @@ const COMIC_EXTENSIONS = [".cbr", ".cbz", ".pdf", ".epub"];
 
 /**
  * Find all comic files in a directory
+ * @param {string} directory - The directory to search
+ * @param {object} options - Search options
+ * @param {boolean} options.recursive - Whether to search subdirectories (default: false)
  */
-export async function findComicFiles(directory) {
-    const pattern = path.join(directory, "**/*");
+export async function findComicFiles(directory, options = {}) {
+    const { recursive = false } = options;
+    const pattern = recursive ? path.join(directory, "**/*") : path.join(directory, "*");
     const allFiles = await glob(pattern, { nodir: true });
 
     return allFiles.filter((file) => {
