@@ -4,56 +4,91 @@ import { logger } from "../utils/logger.js";
 import { findComicFiles, getFilename, moveFile } from "../utils/files.js";
 import { batchGetMetadata } from "../services/metadata.js";
 import { detectSeriesGroups, createSeriesLookupMap, promptSeriesReview } from "../services/seriesDetection.js";
+import { SERIES_PATTERNS } from "../patterns/seriesPatterns.js";
+
+/**
+ * Get publisher from series patterns if series matches
+ */
+function getPublisherFromPattern(text) {
+    for (const { pattern, publisher } of SERIES_PATTERNS) {
+        if (pattern.test(text)) {
+            return publisher;
+        }
+    }
+    return null;
+}
 
 /**
  * Build assignments from metadata results and series detection
  * Series detection takes priority - files in a series stay together
+ * Publisher from series patterns takes priority over metadata
  */
 function buildAssignments(files, metadataResults, seriesLookupMap, seriesGroups) {
-    // First pass: determine the best publisher for each series
+    // First pass: determine the best publisher for each series by checking series name against patterns
     const seriesPublisherMap = new Map();
 
     for (const group of seriesGroups) {
-        const publishers = new Map(); // publisher -> count
+        // Check if the series name matches a pattern - this takes priority
+        const patternPublisher = getPublisherFromPattern(group.seriesName);
 
-        // Count publishers for files in this series
-        for (const file of group.files) {
-            const fileIndex = files.indexOf(file);
-            if (fileIndex !== -1) {
-                const metadata = metadataResults[fileIndex];
-                if (metadata.publisher) {
-                    publishers.set(metadata.publisher, (publishers.get(metadata.publisher) || 0) + 1);
+        if (patternPublisher) {
+            // Series name matched a pattern, use that publisher
+            seriesPublisherMap.set(group.seriesName, patternPublisher);
+        } else {
+            // Fall back to counting publishers from metadata
+            const publishers = new Map(); // publisher -> count
+
+            // Count publishers for files in this series
+            for (const file of group.files) {
+                const fileIndex = files.indexOf(file);
+                if (fileIndex !== -1) {
+                    const metadata = metadataResults[fileIndex];
+                    if (metadata.publisher) {
+                        publishers.set(metadata.publisher, (publishers.get(metadata.publisher) || 0) + 1);
+                    }
                 }
             }
-        }
 
-        // Use the most common publisher for this series
-        if (publishers.size > 0) {
-            const mostCommonPublisher = Array.from(publishers.entries()).sort((a, b) => b[1] - a[1])[0][0];
-            seriesPublisherMap.set(group.seriesName, mostCommonPublisher);
+            // Use the most common publisher for this series
+            if (publishers.size > 0) {
+                const mostCommonPublisher = Array.from(publishers.entries()).sort((a, b) => b[1] - a[1])[0][0];
+                seriesPublisherMap.set(group.seriesName, mostCommonPublisher);
+            }
         }
     }
 
     return files.map((file, index) => {
         const metadata = metadataResults[index];
         const detectedSeries = seriesLookupMap.get(file);
+        const filename = getFilename(file);
 
         // If we detected a series for this file, use it to build a better folder path
         let folder = metadata.suggestedFolder;
+        let patternPublisher = null;
 
         if (detectedSeries) {
-            // Use the series-level publisher (most common for the series)
-            const seriesPublisher = seriesPublisherMap.get(detectedSeries);
+            // Use the series-level publisher (already includes pattern check from above)
+            const publisherToUse = seriesPublisherMap.get(detectedSeries);
 
-            if (seriesPublisher) {
-                // Use series publisher with the series name
-                folder = `${seriesPublisher}/${detectedSeries}`;
+            if (publisherToUse) {
+                // Use determined publisher with the series name
+                folder = `${publisherToUse}/${detectedSeries}`;
+                patternPublisher = publisherToUse;
             } else if (metadata.publisher) {
                 // Fallback to file's own publisher if no series publisher
                 folder = `${metadata.publisher}/${detectedSeries}`;
             } else {
                 // Use detected series name without publisher
                 folder = detectedSeries;
+            }
+        } else {
+            // Single file - check if it matches a pattern
+            patternPublisher = getPublisherFromPattern(filename);
+
+            if (patternPublisher) {
+                // Single file with pattern match - use pattern publisher
+                const seriesName = metadata.series || metadata.cleanedName;
+                folder = `${patternPublisher}/${seriesName}`;
             }
         }
 
@@ -62,6 +97,7 @@ function buildAssignments(files, metadataResults, seriesLookupMap, seriesGroups)
             folder,
             metadata,
             detectedSeries,
+            patternPublisher,
         };
     });
 }
