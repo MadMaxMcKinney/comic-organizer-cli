@@ -1,4 +1,6 @@
 import { cleanFilenameForLookup, extractIssueNumber, extractYear } from "../utils/files.js";
+import { PUBLISHERS_PATTERNS, PUBLISHER_ALIASES } from "../patterns/publishersPatterns.js";
+import { SERIES_PATTERNS } from "../patterns/seriesPatterns.js";
 
 /**
  * Comic metadata lookup service
@@ -6,26 +8,6 @@ import { cleanFilenameForLookup, extractIssueNumber, extractYear } from "../util
  */
 
 const GOOGLE_BOOKS_API = "https://www.googleapis.com/books/v1/volumes";
-
-// Common comic publishers
-const PUBLISHERS = ["Marvel", "DC Comics", "DC", "Image", "Dark Horse", "IDW", "Vertigo", "Boom! Studios", "Dynamite", "Valiant", "Oni Press", "Archie", "Titan", "AWA", "AfterShock"];
-
-// Publisher name normalization (map variations to canonical names). Keep lower case keys.
-const PUBLISHER_ALIASES = {
-    "dark horse comics": "Dark Horse",
-    "dark horse": "Dark Horse",
-    "dc comics": "DC Comics",
-    dc: "DC Comics",
-    "marvel comics": "Marvel",
-    marvel: "Marvel",
-    "image comics": "Image",
-    image: "Image",
-    "boom! studios": "BOOM! Studios",
-    "boom studios": "BOOM! Studios",
-    boom: "BOOM! Studios",
-    "idw publishing": "IDW",
-    idw: "IDW",
-};
 
 /**
  * Check if publisher is a known comic publisher
@@ -40,7 +22,7 @@ function isKnownComicPublisher(publisher) {
     }
 
     // Check if in PUBLISHERS list
-    return PUBLISHERS.some((known) => known.toLowerCase() === publisherLower);
+    return PUBLISHERS_PATTERNS.some((known) => known.toLowerCase() === publisherLower);
 }
 
 /**
@@ -67,44 +49,12 @@ function normalizePublisher(publisher) {
     return null;
 }
 
-// Common series patterns to detect
-const SERIES_PATTERNS = [
-    { pattern: /batman/i, series: "Batman", publisher: "DC Comics" },
-    { pattern: /superman/i, series: "Superman", publisher: "DC Comics" },
-    { pattern: /wonder\s*woman/i, series: "Wonder Woman", publisher: "DC Comics" },
-    { pattern: /flash/i, series: "The Flash", publisher: "DC Comics" },
-    { pattern: /green\s*lantern/i, series: "Green Lantern", publisher: "DC Comics" },
-    { pattern: /aquaman/i, series: "Aquaman", publisher: "DC Comics" },
-    { pattern: /justice\s*league/i, series: "Justice League", publisher: "DC Comics" },
-    { pattern: /spider[-\s]?man/i, series: "Spider-Man", publisher: "Marvel" },
-    { pattern: /x[-\s]?men/i, series: "X-Men", publisher: "Marvel" },
-    { pattern: /avengers/i, series: "Avengers", publisher: "Marvel" },
-    { pattern: /iron\s*man/i, series: "Iron Man", publisher: "Marvel" },
-    { pattern: /captain\s*america/i, series: "Captain America", publisher: "Marvel" },
-    { pattern: /thor\b/i, series: "Thor", publisher: "Marvel" },
-    { pattern: /hulk/i, series: "Hulk", publisher: "Marvel" },
-    { pattern: /daredevil/i, series: "Daredevil", publisher: "Marvel" },
-    { pattern: /deadpool/i, series: "Deadpool", publisher: "Marvel" },
-    { pattern: /wolverine/i, series: "Wolverine", publisher: "Marvel" },
-    { pattern: /fantastic\s*four/i, series: "Fantastic Four", publisher: "Marvel" },
-    { pattern: /walking\s*dead/i, series: "The Walking Dead", publisher: "Image" },
-    { pattern: /spawn/i, series: "Spawn", publisher: "Image" },
-    { pattern: /invincible/i, series: "Invincible", publisher: "Image" },
-    { pattern: /saga\b/i, series: "Saga", publisher: "Image" },
-    { pattern: /sandman/i, series: "Sandman", publisher: "Vertigo" },
-    { pattern: /watchmen/i, series: "Watchmen", publisher: "DC Comics" },
-    { pattern: /hellboy/i, series: "Hellboy", publisher: "Dark Horse" },
-    { pattern: /tmnt|teenage\s*mutant/i, series: "Teenage Mutant Ninja Turtles", publisher: "IDW" },
-    { pattern: /transformers/i, series: "Transformers", publisher: "IDW" },
-    { pattern: /star\s*wars/i, series: "Star Wars", publisher: "Marvel" },
-];
-
 /**
  * Detect publisher from filename
  */
 function detectPublisher(filename) {
     const upper = filename.toUpperCase();
-    for (const pub of PUBLISHERS) {
+    for (const pub of PUBLISHERS_PATTERNS) {
         if (upper.includes(pub.toUpperCase())) {
             return pub;
         }
