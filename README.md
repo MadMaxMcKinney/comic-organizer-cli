@@ -1,4 +1,4 @@
-# 📚 Comic Organizer
+# 📚 Comic Organizer CLI
 
 An interactive CLI application for organizing your digital comic collection. Supports `.cbr`, `.cbz`, `.pdf`, and `.epub` files.
 
@@ -34,13 +34,6 @@ Run the application and follow the interactive prompts:
 npm start
 ```
 
-You'll be presented with options to:
-1. **Automatic Organization** - Let the app analyze filenames and organize automatically
-2. **Manual Organization** - Use your custom filters.json configuration
-3. **Flatten Hierarchy** - Move all comics to the root folder and remove empty directories
-4. **Post-Processing Only** - Run post-processing operations (like renaming) on any directory
-5. **Help** - Learn more about each option
-
 ### Example Session
 
 ```
@@ -61,7 +54,7 @@ You'll be presented with options to:
 
 ? Enter the destination directory for organized comics: ./comics
 
-? Run in preview mode? (no files will be moved) Yes
+? Preview output first? (no files will be moved) Yes
 
 ▸ Organization Plan (8 folders)
 ────────────────────────────────
