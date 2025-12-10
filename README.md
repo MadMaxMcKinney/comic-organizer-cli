@@ -4,12 +4,12 @@ An interactive CLI application for organizing your digital comic collection. Sup
 
 ## Features
 
-- **🤖 Automatic Organization**: Analyzes filenames to detect publishers, series, and issue numbers. Uses pattern matching and optional Google Books API lookup.
-- **📋 Manual Organization via Filters**: Use a JSON configuration file with regex filtering patterns to define your own folder and sub-folder structure.
-- **📦 Flatten Hierarchy**: Move all comics from subdirectories to the root folder.
-- **⚙️ Post-Processing**: Run useful operations on a directory, like renaming files based on metadata or combining duplicate/similar folders.
-- **🔍 Operate Safely**: See exactly what will happen before any files are moved or changed.
-- **🎨 Beautiful CLI**: Color-coded output with progress indicators and interactive inputs.
+- **🤖 Automatically organize your comics**: Analyzes filenames to detect publishers, series, and issue numbers. Uses pattern matching and optional Google Books API lookup.
+- **📋 Manually organize via filters**: Use a JSON configuration file with regex filtering patterns to define your own folder and sub-folder structure.
+- **📦 Flatten folder hierarchy**: Move all comics from subdirectories to the root folder.
+- **⚙️ Post-process results**: Run useful operations on a directory, like renaming files based on metadata or combining duplicate/similar folders.
+- **🔍 Operate safely**: See exactly what will happen before any files are moved or changed.
+- **🎨 Enjoy a beautiful CLI**: Color-coded output with progress indicators and interactive inputs.
 
 ## Installation
 
