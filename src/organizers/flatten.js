@@ -147,22 +147,6 @@ export async function runFlattenOrganizer(sourceDir, options = {}) {
         };
     }
 
-    // Prompt for confirmation
-    logger.newline();
-    const { confirm } = await inquirer.prompt([
-        {
-            type: "confirm",
-            name: "confirm",
-            message: `Proceed with flattening ${filesInSubdirs.length} files?`,
-            default: false,
-        },
-    ]);
-
-    if (!confirm) {
-        logger.warning("Operation cancelled by user");
-        return { processed: 0, moved: 0, foldersRemoved: 0, errors: [], cancelled: true };
-    }
-
     // Execute flattening
     logger.section("Moving files to root");
 
