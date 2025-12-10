@@ -19,7 +19,7 @@ An interactive CLI application for organizing your digital comic collection. Sup
 
 ```bash
 # Clone or navigate to the project directory
-cd comic-organizer
+cd comic-organizer-cli
 
 # Install dependencies
 pnpm install
