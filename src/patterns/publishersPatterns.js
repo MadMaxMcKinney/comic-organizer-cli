@@ -2,7 +2,6 @@
  * Comic publisher data
  */
 
-// Canonical publisher names (single source of truth)
 export const PUBLISHERS = {
     MARVEL: "Marvel",
     DC: "DC Comics",
