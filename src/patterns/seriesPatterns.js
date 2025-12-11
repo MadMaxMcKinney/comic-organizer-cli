@@ -175,6 +175,12 @@ export const SERIES_PATTERNS = [
     { pattern: /x[-\s]?o[-\s]?manowar/i, series: "X-O Manowar", publisher: PUBLISHERS.VALIANT },
     { pattern: /ninjak/i, series: "Ninjak", publisher: PUBLISHERS.VALIANT },
 
+    // Titan Comics
+    { pattern: /doctor[-\s]?who/i, series: "Doctor Who", publisher: PUBLISHERS.TITAN },
+    { pattern: /star[-\s]?trek/i, series: "Star Trek", publisher: PUBLISHERS.TITAN },
+    { pattern: /blade[-\s]?runner/i, series: "Blade Runner", publisher: PUBLISHERS.TITAN },
+    { pattern: /fallout/i, series: "Fallout", publisher: PUBLISHERS.TITAN },
+
     // Other Publishers
     { pattern: /speed[-\s]?racer/i, series: "Speed Racer", publisher: PUBLISHERS.MAD_CAVE },
     { pattern: /brzrkr|berzerker/i, series: "BRZRKR", publisher: PUBLISHERS.BOOM },
