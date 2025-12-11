@@ -1,5 +1,5 @@
 import { cleanFilenameForLookup, extractIssueNumber, extractYear } from "../utils/files.js";
-import { PUBLISHERS_PATTERNS, PUBLISHER_ALIASES } from "../patterns/publishersPatterns.js";
+import { PUBLISHERS, PUBLISHER_ALIASES } from "../patterns/publishersPatterns.js";
 import { SERIES_PATTERNS } from "../patterns/seriesPatterns.js";
 
 /**
@@ -21,8 +21,8 @@ function isKnownComicPublisher(publisher) {
         return true;
     }
 
-    // Check if in PUBLISHERS list
-    return PUBLISHERS_PATTERNS.some((known) => known.toLowerCase() === publisherLower);
+    // Check if in PUBLISHERS object values
+    return Object.values(PUBLISHERS).some((known) => known.toLowerCase() === publisherLower);
 }
 
 /**
