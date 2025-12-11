@@ -39,6 +39,8 @@ export const PUBLISHER_ALIASES = {
     "mad cave studios": PUBLISHERS.MAD_CAVE,
     "mad cave comics": PUBLISHERS.MAD_CAVE,
     "dynamite comics": PUBLISHERS.DYNAMITE,
+    "titan publishing group": PUBLISHERS.TITAN,
+    "titan publishing": PUBLISHERS.TITAN,
     dynamite: PUBLISHERS.DYNAMITE,
     "oni press": PUBLISHERS.ONI_PRESS,
     "wildstorm productions": PUBLISHERS.WILDSTORM,
