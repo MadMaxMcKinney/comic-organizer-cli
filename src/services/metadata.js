@@ -54,7 +54,7 @@ function normalizePublisher(publisher) {
  */
 function detectPublisher(filename) {
     const upper = filename.toUpperCase();
-    for (const pub of PUBLISHERS_PATTERNS) {
+    for (const pub of Object.values(PUBLISHERS)) {
         if (upper.includes(pub.toUpperCase())) {
             return pub;
         }
