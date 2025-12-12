@@ -74,7 +74,7 @@ function calculateSimilarity(str1, str2) {
  */
 async function findFolders(directory) {
     const folders = new Set();
-    const files = await findComicFiles(directory);
+    const files = await findComicFiles(directory, { recursive: true });
 
     for (const file of files) {
         const relativePath = path.relative(directory, path.dirname(file));

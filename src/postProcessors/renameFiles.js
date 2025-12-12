@@ -169,7 +169,7 @@ export async function renameFilesHandler(sourceDir, outputDir) {
 
     // Find all comic files
     const spinner = ora("Finding comic files...").start();
-    const files = await findComicFiles(outputDir);
+    const files = await findComicFiles(outputDir, { recursive: true });
 
     if (files.length === 0) {
         spinner.warn("No comic files found");
