@@ -162,6 +162,7 @@ export const SERIES_PATTERNS = [
     { pattern: /judge[-\s]?dredd/i, series: "Judge Dredd", publisher: PUBLISHERS.IDW },
     { pattern: /locke[-\s]?&[-\s]?key|locke[-\s]?and[-\s]?key/i, series: "Locke & Key", publisher: PUBLISHERS.IDW },
     { pattern: /g\.?i\.?[-\s]?joe/i, series: "G.I. Joe", publisher: PUBLISHERS.IDW },
+    { pattern: /star[-\s]?trek/i, series: "Star Trek", publisher: PUBLISHERS.IDW },
 
     // BOOM! Studios
     { pattern: /mouse[-\s]?guard/i, series: "Mouse Guard", publisher: PUBLISHERS.BOOM },
@@ -177,7 +178,6 @@ export const SERIES_PATTERNS = [
 
     // Titan Comics
     { pattern: /doctor[-\s]?who/i, series: "Doctor Who", publisher: PUBLISHERS.TITAN },
-    { pattern: /star[-\s]?trek/i, series: "Star Trek", publisher: PUBLISHERS.TITAN },
     { pattern: /blade[-\s]?runner/i, series: "Blade Runner", publisher: PUBLISHERS.TITAN },
     { pattern: /fallout/i, series: "Fallout", publisher: PUBLISHERS.TITAN },
 
