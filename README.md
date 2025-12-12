@@ -218,6 +218,8 @@ Automatically rename files based on extracted metadata (including fetched metada
 - **Publisher - Series (Year)**: `Marvel - Spider-Man (2023).cbz`
 - **Series_Issue_Year**: `Spider-Man_001_2023.cbz`
 
+You will be able to preview all changes before they are applied, select which files to include, and have the option to manually edit any filenames before finalizing.
+
 ## Supported File Types
 
 `.cbr`, `.cbz`, `.pdf`, `.epub` are the only supported file types.
