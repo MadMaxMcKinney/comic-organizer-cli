@@ -2,6 +2,8 @@ import AdmZip from "adm-zip";
 import { createExtractorFromFile } from "node-unrar-js";
 import { XMLParser } from "fast-xml-parser";
 import path from "path";
+import fs from "fs-extra";
+import os from "os";
 
 /**
  * Extract ComicInfo.xml from a CBZ file
@@ -28,25 +30,60 @@ async function extractComicInfoFromCBZ(filePath) {
  * Extract ComicInfo.xml from a CBR file
  */
 async function extractComicInfoFromCBR(filePath) {
+    let tempDir = null;
+    
     try {
+        // Create a temporary directory for extraction
+        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "cbr-extract-"));
+        
         const extractor = await createExtractorFromFile({
             filepath: filePath,
-            targetPath: "", // We'll extract to memory
+            targetPath: tempDir,
         });
 
-        const { files } = extractor.extract();
-        const fileHeaders = [...files];
+        // Wrap synchronous operations to allow event loop to continue
+        return await new Promise((resolve) => {
+            setImmediate(async () => {
+                try {
+                    // Get file list without extracting
+                    const fileList = extractor.getFileList();
+                    const fileHeaders = [...fileList.fileHeaders];
 
-        const comicInfoFile = fileHeaders.find((file) => file.fileHeader.name.toLowerCase() === "comicinfo.xml");
+                    const comicInfoFile = fileHeaders.find((file) => file.name.toLowerCase() === "comicinfo.xml");
 
-        if (!comicInfoFile || !comicInfoFile.extraction) {
-            return null;
-        }
+                    if (!comicInfoFile) {
+                        return resolve(null);
+                    }
 
-        const xmlContent = Buffer.from(comicInfoFile.extraction).toString("utf8");
-        return xmlContent;
+                    // Extract just this file
+                    const extracted = extractor.extract({
+                        files: [comicInfoFile.name],
+                    });
+                    
+                    const files = [...extracted.files];
+                    
+                    if (files.length === 0 || !files[0].extraction) {
+                        return resolve(null);
+                    }
+
+                    const xmlContent = Buffer.from(files[0].extraction).toString("utf8");
+                    resolve(xmlContent);
+                } catch (error) {
+                    resolve(null);
+                }
+            });
+        });
     } catch (error) {
         return null;
+    } finally {
+        // Clean up temp directory
+        if (tempDir) {
+            try {
+                await fs.rm(tempDir, { recursive: true, force: true });
+            } catch (cleanupError) {
+                // Ignore cleanup errors
+            }
+        }
     }
 }
 
