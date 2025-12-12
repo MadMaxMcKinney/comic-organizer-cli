@@ -31,11 +31,11 @@ async function extractComicInfoFromCBZ(filePath) {
  */
 async function extractComicInfoFromCBR(filePath) {
     let tempDir = null;
-    
+
     try {
         // Create a temporary directory for extraction
         tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "cbr-extract-"));
-        
+
         const extractor = await createExtractorFromFile({
             filepath: filePath,
             targetPath: tempDir,
@@ -59,9 +59,9 @@ async function extractComicInfoFromCBR(filePath) {
                     const extracted = extractor.extract({
                         files: [comicInfoFile.name],
                     });
-                    
+
                     const files = [...extracted.files];
-                    
+
                     if (files.length === 0 || !files[0].extraction) {
                         return resolve(null);
                     }
