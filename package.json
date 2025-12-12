@@ -1,35 +1,44 @@
 {
-  "name": "comic-organizer",
-  "version": "1.0.0",
-  "description": "Interactive CLI to organize digital comic files (cbr, cbz, pdf, epub)",
-  "main": "src/index.js",
-  "type": "module",
-  "bin": {
-    "comic-organizer": "./src/index.js"
-  },
-  "scripts": {
-    "start": "node src/index.js",
-    "link": "npm link"
-  },
-  "keywords": [
-    "comics",
-    "organizer",
-    "cli",
-    "cbr",
-    "cbz",
-    "pdf",
-    "epub"
-  ],
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "adm-zip": "^0.5.16",
-    "chalk": "^5.3.0",
-    "fast-xml-parser": "^5.3.3",
-    "fs-extra": "^11.2.0",
-    "glob": "^10.3.10",
-    "inquirer": "^9.2.12",
-    "node-unrar-js": "^2.0.2",
-    "ora": "^8.0.1"
-  }
+    "name": "comic-organizer",
+    "version": "1.0.0",
+    "description": "Interactive CLI to organize digital comic files (cbr, cbz, pdf, epub)",
+    "main": "src/index.js",
+    "type": "module",
+    "bin": {
+        "comic-organizer": "./src/index.js"
+    },
+    "scripts": {
+        "start": "node src/index.js",
+        "link": "npm link",
+        "test": "vitest",
+        "test:ui": "vitest --ui",
+        "test:run": "vitest run",
+        "test:coverage": "vitest run --coverage"
+    },
+    "keywords": [
+        "comics",
+        "organizer",
+        "cli",
+        "cbr",
+        "cbz",
+        "pdf",
+        "epub"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "adm-zip": "^0.5.16",
+        "chalk": "^5.3.0",
+        "fast-xml-parser": "^5.3.3",
+        "fs-extra": "^11.2.0",
+        "glob": "^10.3.10",
+        "inquirer": "^9.2.12",
+        "node-unrar-js": "^2.0.2",
+        "ora": "^8.0.1"
+    },
+    "devDependencies": {
+        "@vitest/coverage-v8": "4.0.15",
+        "@vitest/ui": "^4.0.15",
+        "vitest": "^4.0.15"
+    }
 }

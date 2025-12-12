@@ -53,7 +53,7 @@ async function extractComicInfoFromCBR(filePath) {
 /**
  * Parse ComicInfo.xml content
  */
-function parseComicInfo(xmlContent) {
+export function parseComicInfo(xmlContent) {
     if (!xmlContent) return null;
 
     try {
@@ -64,11 +64,13 @@ function parseComicInfo(xmlContent) {
 
         const result = parser.parse(xmlContent);
 
-        if (!result.ComicInfo) {
+        // ComicInfo must exist (even if empty string or empty object)
+        if (result.ComicInfo === undefined) {
             return null;
         }
 
-        const info = result.ComicInfo;
+        // If ComicInfo exists but is an empty string or non-object, treat as empty object
+        const info = typeof result.ComicInfo === "object" ? result.ComicInfo : {};
 
         return {
             series: info.Series || null,
