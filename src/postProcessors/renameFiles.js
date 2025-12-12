@@ -178,16 +178,41 @@ export async function renameFilesHandler(sourceDir, outputDir) {
 
     spinner.succeed(`Found ${files.length} comic files`);
 
+    // Let user select which files to process
+    logger.newline();
+    const { selectedFiles } = await inquirer.prompt([
+        {
+            type: "checkbox",
+            name: "selectedFiles",
+            message: "Select files to rename:",
+            choices: files.map((filePath) => ({
+                name: getFilename(filePath),
+                value: filePath,
+                checked: true,
+            })),
+            pageSize: 15,
+            validate: (answer) => {
+                if (answer.length === 0) {
+                    return "You must select at least one file, or press Ctrl+C to cancel.";
+                }
+                return true;
+            },
+        },
+    ]);
+
+    logger.newline();
+
     // Analyze files and get metadata
-    spinner.start("Analyzing files and fetching metadata...");
+    const spinner2 = ora("Analyzing files and fetching metadata...");
+    spinner2.start();
     const renameActions = [];
 
-    for (let i = 0; i < files.length; i++) {
-        const filePath = files[i];
+    for (let i = 0; i < selectedFiles.length; i++) {
+        const filePath = selectedFiles[i];
         const filename = getFilename(filePath);
         const ext = getExtension(filePath);
 
-        spinner.text = `Analyzing ${i + 1}/${files.length}: ${filename}`;
+        spinner2.text = `Analyzing ${i + 1}/${selectedFiles.length}: ${filename}`;
 
         const metadata = await getComicMetadata(filename, { useApi });
         const newFilename = selectedFormat.format(metadata, ext);
@@ -204,12 +229,12 @@ export async function renameFilesHandler(sourceDir, outputDir) {
         }
 
         // Small delay to avoid API rate limiting
-        if (useApi && i < files.length - 1) {
+        if (useApi && i < selectedFiles.length - 1) {
             await new Promise((resolve) => setTimeout(resolve, 200));
         }
     }
 
-    spinner.succeed("Analysis complete");
+    spinner2.succeed("Analysis complete");
 
     if (renameActions.length === 0) {
         logger.warning("No files need to be renamed");
@@ -286,5 +311,104 @@ export async function renameFilesHandler(sourceDir, outputDir) {
         spinner.warn(`Renamed ${renamed} files (${errors} failed)`);
     } else {
         spinner.succeed(`Successfully renamed ${renamed} files`);
+    }
+
+    // Ask if user wants to manually rename any files
+    logger.newline();
+    const { wantManualRename } = await inquirer.prompt([
+        {
+            type: "confirm",
+            name: "wantManualRename",
+            message: "Would you like to manually rename any of the changed files?",
+            default: false,
+        },
+    ]);
+
+    if (wantManualRename) {
+        // Get list of successfully renamed files
+        const renamedFiles = renameActions
+            .filter((action) => {
+                try {
+                    // Check if new file exists
+                    return fs.existsSync(action.newPath);
+                } catch {
+                    return false;
+                }
+            })
+            .map((action) => ({
+                name: action.newFilename,
+                value: action,
+            }));
+
+        if (renamedFiles.length === 0) {
+            logger.warning("No files available for manual renaming");
+            return;
+        }
+
+        let continueManualRename = true;
+
+        while (continueManualRename) {
+            logger.newline();
+            const { fileToRename } = await inquirer.prompt([
+                {
+                    type: "list",
+                    name: "fileToRename",
+                    message: "Select a file to rename:",
+                    choices: [...renamedFiles, new inquirer.Separator(), { name: chalk.dim("Done - Exit manual rename"), value: null }],
+                    pageSize: 15,
+                },
+            ]);
+
+            if (!fileToRename) {
+                continueManualRename = false;
+                break;
+            }
+
+            // Get new filename from user
+            const { newManualFilename } = await inquirer.prompt([
+                {
+                    type: "input",
+                    name: "newManualFilename",
+                    message: "Enter new filename (without extension):",
+                    default: path.basename(fileToRename.newFilename, path.extname(fileToRename.newFilename)),
+                    validate: (input) => {
+                        if (!input || input.trim() === "") {
+                            return "Filename cannot be empty";
+                        }
+                        // Check for invalid characters
+                        if (/[<>:"/\\|?*]/.test(input)) {
+                            return 'Filename cannot contain: < > : " / \\ | ? *';
+                        }
+                        return true;
+                    },
+                },
+            ]);
+
+            const ext = path.extname(fileToRename.newFilename);
+            const finalFilename = newManualFilename.trim() + ext;
+            const finalPath = path.join(path.dirname(fileToRename.newPath), finalFilename);
+
+            try {
+                await fs.move(fileToRename.newPath, finalPath, { overwrite: false });
+                logger.success(`Renamed to: ${finalFilename}`);
+
+                // Update the action in our list
+                const index = renamedFiles.findIndex((f) => f.value === fileToRename);
+                if (index !== -1) {
+                    renamedFiles[index].name = finalFilename;
+                    renamedFiles[index].value.newFilename = finalFilename;
+                    renamedFiles[index].value.newPath = finalPath;
+                }
+            } catch (error) {
+                if (error.code === "EEXIST") {
+                    logger.error(`A file named "${finalFilename}" already exists`);
+                } else {
+                    logger.error(`Failed to rename: ${error.message}`);
+                }
+            }
+        }
+
+        logger.newline();
+        logger.info("Manual rename complete");
     }
 }
