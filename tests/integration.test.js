@@ -146,6 +146,110 @@ describe("Integration Tests - Comic Organization Workflow", () => {
             expect(result.source).not.toBe("comicinfo-xml");
             expect(result.issueNumber).toBe(1);
         });
+
+        it("should extract ComicInfo.xml from actual CBZ file (full integration)", async () => {
+            const zip = new AdmZip();
+
+            // Create a real-world ComicInfo.xml with xmlns attributes
+            const xmlContent = `<?xml version="1.0"?>
+<ComicInfo xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Series>Geiger 80-Page Giant</Series>
+  <Number>1</Number>
+  <Web>https://www.comixology.com/Geiger-80-Page-Giant-1/digital-comic/966286</Web>
+  <Summary>MAD GHOST COMICS presents a MONSTROUS 80 PAGES</Summary>
+  <Notes>Scraped metadata from Comixology</Notes>
+  <Publisher>Image</Publisher>
+  <Genre>Action/Adventure, Science Fiction</Genre>
+  <PageCount>77</PageCount>
+  <LanguageISO>en</LanguageISO>
+</ComicInfo>`;
+
+            zip.addFile("ComicInfo.xml", Buffer.from(xmlContent, "utf-8"));
+            zip.addFile("page1.jpg", Buffer.from("fake image data"));
+
+            const filePath = path.join(testDir, "geiger-001.cbz");
+            zip.writeZip(filePath);
+
+            // Test readComicInfo directly
+            const comicInfo = await readComicInfo(filePath);
+
+            expect(comicInfo).not.toBeNull();
+            expect(comicInfo.series).toBe("Geiger 80-Page Giant");
+            expect(comicInfo.number).toBe(1);
+            expect(comicInfo.publisher).toBe("Image");
+            expect(comicInfo.pageCount).toBe(77);
+            expect(comicInfo.languageISO).toBe("en");
+            expect(comicInfo.web).toBe("https://www.comixology.com/Geiger-80-Page-Giant-1/digital-comic/966286");
+        });
+
+        it("should handle ComicInfo.xml with various metadata fields", async () => {
+            const zip = new AdmZip();
+
+            const xmlContent = `<?xml version="1.0"?>
+<ComicInfo>
+    <Series>Amazing Spider-Man</Series>
+    <Number>800</Number>
+    <Volume>5</Volume>
+    <Title>Legacy</Title>
+    <Publisher>Marvel Comics</Publisher>
+    <Imprint>Marvel</Imprint>
+    <Year>2018</Year>
+    <Month>5</Month>
+    <Writer>Dan Slott</Writer>
+    <Penciller>Stuart Immonen</Penciller>
+    <Summary>A special anniversary issue!</Summary>
+    <StoryArc>Go Down Swinging</StoryArc>
+    <Format>Series</Format>
+    <PageCount>96</PageCount>
+</ComicInfo>`;
+
+            zip.addFile("ComicInfo.xml", Buffer.from(xmlContent, "utf-8"));
+            zip.addFile("page1.jpg", Buffer.from("fake image data"));
+
+            const filePath = path.join(testDir, "asm-800.cbz");
+            zip.writeZip(filePath);
+
+            const comicInfo = await readComicInfo(filePath);
+
+            expect(comicInfo).not.toBeNull();
+            expect(comicInfo.series).toBe("Amazing Spider-Man");
+            expect(comicInfo.number).toBe(800);
+            expect(comicInfo.volume).toBe(5);
+            expect(comicInfo.title).toBe("Legacy");
+            expect(comicInfo.publisher).toBe("Marvel Comics");
+            expect(comicInfo.imprint).toBe("Marvel");
+            expect(comicInfo.year).toBe(2018);
+            expect(comicInfo.month).toBe(5);
+            expect(comicInfo.writer).toBe("Dan Slott");
+            expect(comicInfo.penciller).toBe("Stuart Immonen");
+            expect(comicInfo.summary).toBe("A special anniversary issue!");
+            expect(comicInfo.storyArc).toBe("Go Down Swinging");
+            expect(comicInfo.format).toBe("Series");
+            expect(comicInfo.pageCount).toBe(96);
+        });
+
+        it("should handle case-insensitive ComicInfo.xml filename", async () => {
+            const zip = new AdmZip();
+
+            const xmlContent = `<?xml version="1.0"?>
+<ComicInfo>
+    <Series>Batman</Series>
+    <Number>1</Number>
+    <Publisher>DC Comics</Publisher>
+</ComicInfo>`;
+
+            // Test with different casing
+            zip.addFile("COMICINFO.XML", Buffer.from(xmlContent, "utf-8"));
+            zip.addFile("page1.jpg", Buffer.from("fake image data"));
+
+            const filePath = path.join(testDir, "batman-case-test.cbz");
+            zip.writeZip(filePath);
+
+            const comicInfo = await readComicInfo(filePath);
+
+            expect(comicInfo).not.toBeNull();
+            expect(comicInfo.series).toBe("Batman");
+        });
     });
 
     describe("Publisher Normalization with Real Files", () => {

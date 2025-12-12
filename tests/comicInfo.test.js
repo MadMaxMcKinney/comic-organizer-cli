@@ -192,6 +192,110 @@ describe("ComicInfo Service", () => {
         });
     });
 
+    describe("Real-world XML parsing", () => {
+        it("should parse ComicInfo.xml with xmlns attributes (like from Comixology)", () => {
+            const xml = `<?xml version="1.0"?>
+<ComicInfo xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Series>Geiger 80-Page Giant</Series>
+  <Number>1</Number>
+  <Web>https://www.comixology.com/Geiger-80-Page-Giant-1/digital-comic/966286</Web>
+  <Summary>MAD GHOST COMICS presents a MONSTROUS 80 PAGES of all-new stories featuring GEIGER</Summary>
+  <Notes>Scraped metadata from Comixology [CMXDB966286], [ASINB09F8PCSM5]</Notes>
+  <Publisher>Image</Publisher>
+  <Genre>Action/Adventure, Science Fiction</Genre>
+  <PageCount>77</PageCount>
+  <LanguageISO>en</LanguageISO>
+</ComicInfo>`;
+
+            const info = parseComicInfo(xml);
+
+            expect(info).not.toBeNull();
+            expect(info.series).toBe("Geiger 80-Page Giant");
+            expect(info.number).toBe(1);
+            expect(info.publisher).toBe("Image");
+            expect(info.pageCount).toBe(77);
+            expect(info.languageISO).toBe("en");
+            expect(info.web).toBe("https://www.comixology.com/Geiger-80-Page-Giant-1/digital-comic/966286");
+        });
+
+        it("should handle XML with encoded HTML entities", () => {
+            const xml = `<?xml version="1.0"?>
+<ComicInfo>
+    <Series>Batman &amp; Robin</Series>
+    <Summary>The Dynamic Duo's greatest adventure &lt;continues&gt;</Summary>
+    <Publisher>DC Comics</Publisher>
+</ComicInfo>`;
+
+            const info = parseComicInfo(xml);
+
+            expect(info.series).toBe("Batman & Robin");
+            expect(info.summary).toContain("<continues>");
+        });
+
+        it("should parse all supported fields from real-world example", () => {
+            const xml = `<?xml version="1.0"?>
+<ComicInfo>
+    <Series>Amazing Spider-Man</Series>
+    <Number>800</Number>
+    <Volume>5</Volume>
+    <Title>Legacy</Title>
+    <Summary>A special anniversary issue!</Summary>
+    <Notes>Digital release</Notes>
+    <Publisher>Marvel Comics</Publisher>
+    <Imprint>Marvel</Imprint>
+    <Genre>Superhero</Genre>
+    <Web>https://marvel.com</Web>
+    <PageCount>96</PageCount>
+    <LanguageISO>en</LanguageISO>
+    <Format>Series</Format>
+    <Year>2018</Year>
+    <Month>5</Month>
+    <Day>30</Day>
+    <Writer>Dan Slott</Writer>
+    <Penciller>Stuart Immonen</Penciller>
+    <Inker>Wade Von Grawbadger</Inker>
+    <Colorist>Marte Gracia</Colorist>
+    <Letterer>Joe Caramagna</Letterer>
+    <CoverArtist>Alex Ross</CoverArtist>
+    <Editor>Nick Lowe</Editor>
+    <StoryArc>Go Down Swinging</StoryArc>
+    <SeriesGroup>Spider-Verse</SeriesGroup>
+    <AlternateSeries>ASM</AlternateSeries>
+    <AlternateNumber>63</AlternateNumber>
+    <AgeRating>Everyone 10+</AgeRating>
+</ComicInfo>`;
+
+            const info = parseComicInfo(xml);
+
+            expect(info.series).toBe("Amazing Spider-Man");
+            expect(info.number).toBe(800);
+            expect(info.volume).toBe(5);
+            expect(info.title).toBe("Legacy");
+            expect(info.publisher).toBe("Marvel Comics");
+            expect(info.imprint).toBe("Marvel");
+            expect(info.year).toBe(2018);
+            expect(info.month).toBe(5);
+            expect(info.day).toBe(30);
+            expect(info.writer).toBe("Dan Slott");
+            expect(info.penciller).toBe("Stuart Immonen");
+            expect(info.inker).toBe("Wade Von Grawbadger");
+            expect(info.colorist).toBe("Marte Gracia");
+            expect(info.letterer).toBe("Joe Caramagna");
+            expect(info.coverArtist).toBe("Alex Ross");
+            expect(info.editor).toBe("Nick Lowe");
+            expect(info.summary).toBe("A special anniversary issue!");
+            expect(info.storyArc).toBe("Go Down Swinging");
+            expect(info.seriesGroup).toBe("Spider-Verse");
+            expect(info.alternateSeries).toBe("ASM");
+            expect(info.alternateNumber).toBe(63); // XML parser converts to number
+            expect(info.format).toBe("Series");
+            expect(info.ageRating).toBe("Everyone 10+");
+            expect(info.web).toBe("https://marvel.com");
+            expect(info.pageCount).toBe(96);
+            expect(info.languageISO).toBe("en");
+        });
+    });
+
     describe("readComicInfo integration", () => {
         it("should return null for unsupported file types", async () => {
             const result = await readComicInfo("/path/to/file.pdf");
