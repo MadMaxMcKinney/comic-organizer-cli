@@ -1,3 +1,5 @@
+![GitHub Release](https://img.shields.io/github/v/release/MadMaxMcKinney/comic-organizer-cli)
+
 # Comic Organizer CLI
 
 <img width="100%" height="auto" alt="CleanShot 2025-12-09 at 20 47 44@2x" src="https://github.com/user-attachments/assets/b64b44ae-ee38-4724-8721-f080a92c82d7" />
