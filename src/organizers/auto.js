@@ -1,5 +1,6 @@
 import path from "path";
 import ora from "ora";
+import inquirer from "inquirer";
 import { logger } from "../utils/logger.js";
 import { findComicFiles, getFilename, moveFile } from "../utils/files.js";
 import { batchGetMetadata } from "../services/metadata.js";
@@ -117,28 +118,83 @@ function groupAssignments(assignments) {
 }
 
 /**
- * Simplify folders for single files
- * If a folder only has 1 file and has a nested path (Publisher/Title),
- * simplify to just the publisher folder
+ * Prompt user for how they want to handle single files (oneshots)
  */
-function simplifySingleFileAssignments(assignments) {
-    // Group by folder to find single-file folders
-    const groups = groupAssignments(assignments);
+async function promptSingleFileHandling(singleFileCount) {
+    logger.newline();
+    logger.section("Single Files Detected");
+    logger.info(`Found ${singleFileCount} file(s) that don't have other files in their series.\n`);
 
+    const { handling } = await inquirer.prompt([
+        {
+            type: "list",
+            name: "handling",
+            message: "How would you like to handle single files?",
+            choices: [
+                {
+                    name: "Create individual series folders for each based on metadata",
+                    value: "series-folder",
+                },
+                {
+                    name: 'Move all to a single "oneshots" folder',
+                    value: "oneshots",
+                },
+                {
+                    name: "Leave as-is (in publisher folders only)",
+                    value: "as-is",
+                },
+            ],
+            default: "oneshots",
+        },
+    ]);
+
+    return handling;
+}
+
+/**
+ * Apply single file handling preference to assignments
+ */
+function applySingleFileHandling(assignments, seriesLookupMap, handlingChoice) {
     return assignments.map((assignment) => {
-        const folderFiles = groups[assignment.folder];
-        const pathParts = assignment.folder.split("/");
+        const isInSeries = seriesLookupMap.has(assignment.file);
 
-        // Only simplify if:
-        // 1. This folder has exactly 1 file
-        // 2. The path has more than 1 segment (e.g., Publisher/Title)
-        // 3. The first segment isn't "Unsorted"
-        if (folderFiles.length === 1 && pathParts.length > 1 && pathParts[0] !== "Unsorted") {
-            return {
-                ...assignment,
-                folder: pathParts[0], // Just use the publisher folder
-                simplified: true,
-            };
+        // Only modify single files (not part of a detected series)
+        if (!isInSeries) {
+            const pathParts = assignment.folder.split("/");
+
+            switch (handlingChoice) {
+                case "oneshots":
+                    // Move to Oneshots folder (preserve publisher if exists)
+                    if (pathParts[0] !== "Unsorted" && pathParts.length > 1) {
+                        return {
+                            ...assignment,
+                            folder: `${pathParts[0]}/Oneshots`,
+                            oneshotHandling: true,
+                        };
+                    } else {
+                        return {
+                            ...assignment,
+                            folder: "Oneshots",
+                            oneshotHandling: true,
+                        };
+                    }
+
+                case "as-is":
+                    // Simplify to just publisher folder
+                    if (pathParts.length > 1 && pathParts[0] !== "Unsorted") {
+                        return {
+                            ...assignment,
+                            folder: pathParts[0],
+                            simplified: true,
+                        };
+                    }
+                    return assignment;
+
+                case "series-folder":
+                default:
+                    // Keep the full path (Publisher/Series)
+                    return assignment;
+            }
         }
 
         return assignment;
@@ -253,6 +309,15 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
     // Create lookup map after potential renames
     const seriesLookupMap = createSeriesLookupMap(seriesGroups);
 
+    // Count single files (files not in any series)
+    const singleFileCount = files.filter((file) => !seriesLookupMap.has(file)).length;
+    let singleFileHandling = "series-folder"; // default
+
+    // If there are single files, prompt user for handling preference
+    if (singleFileCount > 0) {
+        singleFileHandling = await promptSingleFileHandling(singleFileCount);
+    }
+
     // Analyze files
     logger.section("Analyzing files for metadata");
 
@@ -273,8 +338,8 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
     // Build assignments with series detection
     let assignments = buildAssignments(files, metadataResults, seriesLookupMap, seriesGroups);
 
-    // Simplify single-file folders (put directly in publisher folder)
-    assignments = simplifySingleFileAssignments(assignments);
+    // Apply user's preference for handling single files
+    assignments = applySingleFileHandling(assignments, seriesLookupMap, singleFileHandling);
 
     // Show organization plan
     let groups = groupAssignments(assignments);
