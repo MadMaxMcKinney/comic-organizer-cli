@@ -164,17 +164,17 @@ function applySingleFileHandling(assignments, seriesLookupMap, handlingChoice) {
 
             switch (handlingChoice) {
                 case "oneshots":
-                    // Move to Oneshots folder (preserve publisher if exists)
+                    // Move to oneshots folder (preserve publisher if exists)
                     if (pathParts[0] !== "Unsorted" && pathParts.length > 1) {
                         return {
                             ...assignment,
-                            folder: `${pathParts[0]}/Oneshots`,
+                            folder: `${pathParts[0]}/oneshots`,
                             oneshotHandling: true,
                         };
                     } else {
                         return {
                             ...assignment,
-                            folder: "Oneshots",
+                            folder: "oneshots",
                             oneshotHandling: true,
                         };
                     }
