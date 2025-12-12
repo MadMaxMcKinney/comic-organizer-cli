@@ -8,6 +8,16 @@ import { findComicFiles, getExtension, getFilename } from "../utils/files.js";
 import { getComicMetadata } from "../services/metadata.js";
 
 /**
+ * Sanitize filename by replacing invalid characters
+ */
+function sanitizeFilename(filename) {
+    return filename
+        .replace(/[<>:"/\\|?*]/g, "-") // Replace invalid characters with hyphen
+        .replace(/\s+/g, " ") // Collapse multiple spaces
+        .trim();
+}
+
+/**
  * Rename format templates
  */
 const RENAME_FORMATS = [
@@ -218,12 +228,13 @@ export async function renameFilesHandler(sourceDir, outputDir) {
         const newFilename = selectedFormat.format(metadata, ext);
 
         if (newFilename && newFilename !== filename) {
-            const newPath = path.join(path.dirname(filePath), newFilename);
+            const sanitizedFilename = sanitizeFilename(newFilename);
+            const newPath = path.join(path.dirname(filePath), sanitizedFilename);
             renameActions.push({
                 oldPath: filePath,
                 newPath: newPath,
                 oldFilename: filename,
-                newFilename: newFilename,
+                newFilename: sanitizedFilename,
                 metadata: metadata,
             });
         }
@@ -385,7 +396,7 @@ export async function renameFilesHandler(sourceDir, outputDir) {
             ]);
 
             const ext = path.extname(fileToRename.newFilename);
-            const finalFilename = newManualFilename.trim() + ext;
+            const finalFilename = sanitizeFilename(newManualFilename.trim() + ext);
             const finalPath = path.join(path.dirname(fileToRename.newPath), finalFilename);
 
             try {
