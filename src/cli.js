@@ -144,7 +144,9 @@ async function getSourceDirectory() {
             message: "Enter the source directory containing comic files:",
             default: ".",
             validate: async (input) => {
-                const dir = path.resolve(input);
+                // Trim whitespace and remove surrounding quotes if present
+                const cleanInput = input.trim().replace(/^["']|["']$/g, "");
+                const dir = path.resolve(cleanInput);
                 if (await directoryExists(dir)) {
                     return true;
                 }
@@ -153,7 +155,9 @@ async function getSourceDirectory() {
         },
     ]);
 
-    const fullPath = path.resolve(sourceDir);
+    // Trim whitespace and remove surrounding quotes if present
+    const cleanPath = sourceDir.trim().replace(/^["']|["']$/g, "");
+    const fullPath = path.resolve(cleanPath);
 
     return fullPath;
 }
@@ -194,7 +198,9 @@ async function getOutputDirectory(sourceDir) {
         },
     ]);
 
-    const fullPath = path.resolve(outputDir);
+    // Trim whitespace and remove surrounding quotes if present
+    const cleanPath = outputDir.trim().replace(/^["']|["']$/g, "");
+    const fullPath = path.resolve(cleanPath);
 
     // Check if same as source
     if (fullPath === sourceDir) {
@@ -227,7 +233,9 @@ async function getConfigFile() {
             message: "Enter path to your filters.json configuration file:",
             default: DEFAULT_CONFIG_FILE,
             validate: async (input) => {
-                const filePath = path.resolve(input);
+                // Trim whitespace and remove surrounding quotes if present
+                const cleanInput = input.trim().replace(/^["']|["']$/g, "");
+                const filePath = path.resolve(cleanInput);
                 if (await fileExists(filePath)) {
                     return true;
                 }
@@ -236,7 +244,9 @@ async function getConfigFile() {
         },
     ]);
 
-    return path.resolve(configPath);
+    // Trim whitespace and remove surrounding quotes if present
+    const cleanPath = configPath.trim().replace(/^["']|["']$/g, "");
+    return path.resolve(cleanPath);
 }
 
 /**
