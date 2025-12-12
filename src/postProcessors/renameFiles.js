@@ -224,7 +224,7 @@ export async function renameFilesHandler(sourceDir, outputDir) {
 
         spinner2.text = `Analyzing ${i + 1}/${selectedFiles.length}: ${filename}`;
 
-        const metadata = await getComicMetadata(filename, { useApi });
+        const metadata = await getComicMetadata(filename, { useApi, filePath });
         const newFilename = selectedFormat.format(metadata, ext);
 
         if (newFilename && newFilename !== filename) {

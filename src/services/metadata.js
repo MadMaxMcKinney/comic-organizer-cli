@@ -1,10 +1,11 @@
-import { cleanFilenameForLookup, extractIssueNumber, extractYear } from "../utils/files.js";
+import { cleanFilenameForLookup, extractIssueNumber, extractYear, getFilename } from "../utils/files.js";
 import { PUBLISHERS, PUBLISHER_ALIASES } from "../patterns/publishersPatterns.js";
 import { SERIES_PATTERNS } from "../patterns/seriesPatterns.js";
+import { readComicInfo } from "./comicInfo.js";
 
 /**
  * Comic metadata lookup service
- * Google Books API (free, no key required)
+ * Priority: ComicInfo.xml > Google Books API > Pattern matching
  */
 
 const GOOGLE_BOOKS_API = "https://www.googleapis.com/books/v1/volumes";
@@ -109,10 +110,10 @@ async function lookupGoogleBooks(query) {
 }
 
 /**
- * Extract metadata from filename using API lookup first, falling back to pattern matching
+ * Extract metadata from filename using ComicInfo.xml first, then API lookup, falling back to pattern matching
  */
 export async function getComicMetadata(filename, options = {}) {
-    const { useApi = true } = options;
+    const { useApi = true, filePath = null } = options;
 
     const cleanName = cleanFilenameForLookup(filename);
     const issueNumber = extractIssueNumber(filename);
@@ -130,7 +131,33 @@ export async function getComicMetadata(filename, options = {}) {
         source: "filename-analysis",
     };
 
-    // Try Google Books API first if enabled
+    // PRIORITY 1: Try ComicInfo.xml if we have the file path
+    if (filePath) {
+        const comicInfo = await readComicInfo(filePath);
+        if (comicInfo && comicInfo.series) {
+            const normalizedPub = normalizePublisher(comicInfo.publisher || comicInfo.imprint);
+
+            metadata = {
+                ...metadata,
+                series: comicInfo.series,
+                publisher: normalizedPub || "Unsorted",
+                issueNumber: comicInfo.number !== null ? comicInfo.number : issueNumber,
+                year: comicInfo.year || year,
+                title: comicInfo.title,
+                volume: comicInfo.volume,
+                writer: comicInfo.writer,
+                summary: comicInfo.summary,
+                storyArc: comicInfo.storyArc,
+                format: comicInfo.format,
+                suggestedFolder: normalizedPub ? `${normalizedPub}/${comicInfo.series}` : `Unsorted/${comicInfo.series}`,
+                confidence: "highest",
+                source: "comicinfo-xml",
+            };
+            return metadata;
+        }
+    }
+
+    // PRIORITY 2: Try Google Books API if enabled
     if (useApi) {
         const apiResult = await lookupGoogleBooks(cleanName);
         if (apiResult && apiResult.publisher) {
@@ -162,7 +189,7 @@ export async function getComicMetadata(filename, options = {}) {
         }
     }
 
-    // Fall back to built-in pattern matching
+    // PRIORITY 3: Fall back to built-in pattern matching
     const patternMatch = detectSeriesFromPatterns(filename);
     const detectedPublisher = detectPublisher(filename);
 
@@ -192,21 +219,29 @@ export async function getComicMetadata(filename, options = {}) {
 
 /**
  * Batch process multiple files
+ * @param {Array<string>} files - Array of file paths (not just filenames)
  */
-export async function batchGetMetadata(filenames, options = {}) {
+export async function batchGetMetadata(files, options = {}) {
     const { onProgress } = options;
     const results = [];
 
-    for (let i = 0; i < filenames.length; i++) {
-        const metadata = await getComicMetadata(filenames[i], options);
+    for (let i = 0; i < files.length; i++) {
+        const filePath = files[i];
+        const filename = getFilename(filePath);
+
+        const metadata = await getComicMetadata(filename, {
+            ...options,
+            filePath, // Pass full path for ComicInfo.xml reading
+        });
+
         results.push(metadata);
 
         if (onProgress) {
-            onProgress(i + 1, filenames.length, metadata);
+            onProgress(i + 1, files.length, metadata);
         }
 
         // Small delay to avoid API rate limiting
-        if (options.useApi && i < filenames.length - 1) {
+        if (options.useApi && i < files.length - 1) {
             await new Promise((resolve) => setTimeout(resolve, 200));
         }
     }

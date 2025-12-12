@@ -323,15 +323,12 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
 
     const analyzeSpinner = ora("Looking up metadata...").start();
 
-    const metadataResults = await batchGetMetadata(
-        files.map((f) => getFilename(f)),
-        {
-            useApi,
-            onProgress: (current, total, meta) => {
-                analyzeSpinner.text = `Analyzing ${current}/${total}: ${meta.cleanedName}`;
-            },
-        }
-    );
+    const metadataResults = await batchGetMetadata(files, {
+        useApi,
+        onProgress: (current, total, meta) => {
+            analyzeSpinner.text = `Analyzing ${current}/${total}: ${meta.cleanedName}`;
+        },
+    });
 
     analyzeSpinner.succeed(`Analyzed ${metadataResults.length} files`);
 
