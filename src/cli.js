@@ -442,7 +442,7 @@ async function runFlattenFlow() {
 async function runPostProcessingFlow() {
     const targetDir = await getSourceDirectory();
     if (!targetDir) return;
-    await showQuickPreviewOfDirectory(targetDir);
+    await showQuickPreviewOfDirectory(targetDir, { recursive: true });
 
     logger.newline();
     await runPostProcessingStandalone(targetDir);

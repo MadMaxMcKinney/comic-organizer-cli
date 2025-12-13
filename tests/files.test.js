@@ -1,5 +1,8 @@
-import { describe, it, expect } from "vitest";
-import { getFilename, getExtension, cleanFilenameForLookup, extractIssueNumber, extractYear } from "../src/utils/files.js";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { getFilename, getExtension, cleanFilenameForLookup, extractIssueNumber, extractYear, findComicFiles } from "../src/utils/files.js";
+import fs from "fs/promises";
+import path from "path";
+import os from "os";
 
 describe("File Utils", () => {
     describe("getFilename", () => {
@@ -121,6 +124,109 @@ describe("File Utils", () => {
 
         it("should not extract issue numbers as years", () => {
             expect(extractYear("Batman #001.cbz")).toBe(null);
+        });
+    });
+
+    describe("findComicFiles", () => {
+        let testDir;
+
+        beforeEach(async () => {
+            // Create a temporary directory for test files
+            testDir = await fs.mkdtemp(path.join(os.tmpdir(), "comic-files-test-"));
+        });
+
+        afterEach(async () => {
+            // Clean up test files
+            await fs.rm(testDir, { recursive: true, force: true });
+        });
+
+        it("should find comic files in top-level directory only (non-recursive)", async () => {
+            // Create files in root
+            await fs.writeFile(path.join(testDir, "Batman #001.cbz"), "");
+            await fs.writeFile(path.join(testDir, "Superman #001.cbr"), "");
+            await fs.writeFile(path.join(testDir, "not-a-comic.txt"), "");
+
+            // Create subdirectory with files
+            const subDir = path.join(testDir, "Marvel");
+            await fs.mkdir(subDir);
+            await fs.writeFile(path.join(subDir, "Spider-Man #001.cbz"), "");
+
+            const files = await findComicFiles(testDir, { recursive: false });
+
+            expect(files.length).toBe(2); // Only top-level comics
+            expect(files.some((f) => f.includes("Batman"))).toBe(true);
+            expect(files.some((f) => f.includes("Superman"))).toBe(true);
+            expect(files.some((f) => f.includes("Spider-Man"))).toBe(false); // Not in subdirectory
+        });
+
+        it("should find comic files recursively in all subdirectories", async () => {
+            // Create files in root
+            await fs.writeFile(path.join(testDir, "Batman #001.cbz"), "");
+
+            // Create nested subdirectories with files
+            const dcDir = path.join(testDir, "DC Comics", "Batman");
+            await fs.mkdir(dcDir, { recursive: true });
+            await fs.writeFile(path.join(dcDir, "Batman #002.cbz"), "");
+
+            const marvelDir = path.join(testDir, "Marvel", "Spider-Man");
+            await fs.mkdir(marvelDir, { recursive: true });
+            await fs.writeFile(path.join(marvelDir, "Spider-Man #001.cbz"), "");
+            await fs.writeFile(path.join(marvelDir, "Spider-Man #002.cbr"), "");
+
+            // Non-comic files
+            await fs.writeFile(path.join(testDir, "readme.txt"), "");
+            await fs.writeFile(path.join(dcDir, "info.txt"), "");
+
+            const files = await findComicFiles(testDir, { recursive: true });
+
+            expect(files.length).toBe(4); // All comics including subdirectories
+            expect(files.some((f) => f.includes("Batman #001"))).toBe(true);
+            expect(files.some((f) => f.includes("Batman #002"))).toBe(true);
+            expect(files.some((f) => f.includes("Spider-Man #001"))).toBe(true);
+            expect(files.some((f) => f.includes("Spider-Man #002"))).toBe(true);
+            expect(files.some((f) => f.includes(".txt"))).toBe(false);
+        });
+
+        it("should find all supported comic file extensions", async () => {
+            await fs.writeFile(path.join(testDir, "comic1.cbz"), "");
+            await fs.writeFile(path.join(testDir, "comic2.cbr"), "");
+            await fs.writeFile(path.join(testDir, "comic3.pdf"), "");
+            await fs.writeFile(path.join(testDir, "comic4.epub"), "");
+            await fs.writeFile(path.join(testDir, "not-comic.zip"), "");
+
+            const files = await findComicFiles(testDir, { recursive: false });
+
+            expect(files.length).toBe(4);
+            expect(files.some((f) => f.endsWith(".cbz"))).toBe(true);
+            expect(files.some((f) => f.endsWith(".cbr"))).toBe(true);
+            expect(files.some((f) => f.endsWith(".pdf"))).toBe(true);
+            expect(files.some((f) => f.endsWith(".epub"))).toBe(true);
+            expect(files.some((f) => f.endsWith(".zip"))).toBe(false);
+        });
+
+        it("should handle empty directory", async () => {
+            const files = await findComicFiles(testDir, { recursive: true });
+            expect(files.length).toBe(0);
+        });
+
+        it("should handle deeply nested directories", async () => {
+            const deepDir = path.join(testDir, "level1", "level2", "level3", "level4");
+            await fs.mkdir(deepDir, { recursive: true });
+            await fs.writeFile(path.join(deepDir, "deep-comic.cbz"), "");
+
+            const files = await findComicFiles(testDir, { recursive: true });
+
+            expect(files.length).toBe(1);
+            expect(files[0]).toContain("deep-comic.cbz");
+        });
+
+        it("should return absolute paths", async () => {
+            await fs.writeFile(path.join(testDir, "Batman #001.cbz"), "");
+
+            const files = await findComicFiles(testDir, { recursive: false });
+
+            expect(files.length).toBe(1);
+            expect(path.isAbsolute(files[0])).toBe(true);
         });
     });
 });
