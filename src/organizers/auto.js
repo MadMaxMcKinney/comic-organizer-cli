@@ -22,38 +22,57 @@ function getPublisherFromPattern(text) {
 /**
  * Build assignments from metadata results and series detection
  * Series detection takes priority - files in a series stay together
- * Publisher from series patterns takes priority over metadata
+ * ComicInfo.xml publisher data takes priority over pattern matching
  */
 function buildAssignments(files, metadataResults, seriesLookupMap, seriesGroups) {
-    // First pass: determine the best publisher for each series by checking series name against patterns
+    // First pass: determine the best publisher for each series
     const seriesPublisherMap = new Map();
 
     for (const group of seriesGroups) {
-        // Check if the series name matches a pattern - this takes priority
-        const patternPublisher = getPublisherFromPattern(group.seriesName);
+        // Priority 1: Check if ANY file in the series has ComicInfo.xml data
+        let comicInfoPublisher = null;
+        let hasComicInfo = false;
 
-        if (patternPublisher) {
-            // Series name matched a pattern, use that publisher
-            seriesPublisherMap.set(group.seriesName, patternPublisher);
-        } else {
-            // Fall back to counting publishers from metadata
-            const publishers = new Map(); // publisher -> count
-
-            // Count publishers for files in this series
-            for (const file of group.files) {
-                const fileIndex = files.indexOf(file);
-                if (fileIndex !== -1) {
-                    const metadata = metadataResults[fileIndex];
-                    if (metadata.publisher) {
-                        publishers.set(metadata.publisher, (publishers.get(metadata.publisher) || 0) + 1);
-                    }
+        for (const file of group.files) {
+            const fileIndex = files.indexOf(file);
+            if (fileIndex !== -1) {
+                const metadata = metadataResults[fileIndex];
+                if (metadata.source === "comicinfo-xml" && metadata.publisher) {
+                    comicInfoPublisher = metadata.publisher;
+                    hasComicInfo = true;
+                    break; // Found ComicInfo.xml, use it
                 }
             }
+        }
 
-            // Use the most common publisher for this series
-            if (publishers.size > 0) {
-                const mostCommonPublisher = Array.from(publishers.entries()).sort((a, b) => b[1] - a[1])[0][0];
-                seriesPublisherMap.set(group.seriesName, mostCommonPublisher);
+        if (hasComicInfo) {
+            // ComicInfo.xml takes highest priority
+            seriesPublisherMap.set(group.seriesName, comicInfoPublisher);
+        } else {
+            // Priority 2: Check if the series name matches a pattern
+            const patternPublisher = getPublisherFromPattern(group.seriesName);
+
+            if (patternPublisher) {
+                seriesPublisherMap.set(group.seriesName, patternPublisher);
+            } else {
+                // Priority 3: Fall back to counting publishers from metadata
+                const publishers = new Map(); // publisher -> count
+
+                for (const file of group.files) {
+                    const fileIndex = files.indexOf(file);
+                    if (fileIndex !== -1) {
+                        const metadata = metadataResults[fileIndex];
+                        if (metadata.publisher) {
+                            publishers.set(metadata.publisher, (publishers.get(metadata.publisher) || 0) + 1);
+                        }
+                    }
+                }
+
+                // Use the most common publisher for this series
+                if (publishers.size > 0) {
+                    const mostCommonPublisher = Array.from(publishers.entries()).sort((a, b) => b[1] - a[1])[0][0];
+                    seriesPublisherMap.set(group.seriesName, mostCommonPublisher);
+                }
             }
         }
     }
@@ -68,7 +87,7 @@ function buildAssignments(files, metadataResults, seriesLookupMap, seriesGroups)
         let patternPublisher = null;
 
         if (detectedSeries) {
-            // Use the series-level publisher (already includes pattern check from above)
+            // Use the series-level publisher (already prioritizes ComicInfo.xml from above)
             const publisherToUse = seriesPublisherMap.get(detectedSeries);
 
             if (publisherToUse) {
@@ -83,13 +102,19 @@ function buildAssignments(files, metadataResults, seriesLookupMap, seriesGroups)
                 folder = detectedSeries;
             }
         } else {
-            // Single file - check if it matches a pattern
-            patternPublisher = getPublisherFromPattern(filename);
-
-            if (patternPublisher) {
-                // Single file with pattern match - use pattern publisher
+            // Single file - Priority 1: Check if it has ComicInfo.xml
+            if (metadata.source === "comicinfo-xml" && metadata.publisher) {
                 const seriesName = metadata.series || metadata.cleanedName;
-                folder = `${patternPublisher}/${seriesName}`;
+                folder = `${metadata.publisher}/${seriesName}`;
+            } else {
+                // Priority 2: Check if it matches a pattern
+                patternPublisher = getPublisherFromPattern(filename);
+
+                if (patternPublisher) {
+                    // Single file with pattern match - use pattern publisher
+                    const seriesName = metadata.series || metadata.cleanedName;
+                    folder = `${patternPublisher}/${seriesName}`;
+                }
             }
         }
 
@@ -292,10 +317,26 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
         logger.info(`  ... and ${files.length - 10} more`);
     }
 
-    // Detect series groups BEFORE metadata analysis
-    logger.section("Detecting series from filenames");
-    const seriesSpinner = ora("Analyzing filenames for series patterns...").start();
-    let seriesGroups = detectSeriesGroups(files);
+    // Analyze files for metadata FIRST (to get ComicInfo.xml series names)
+    logger.section("Analyzing files for metadata");
+
+    const analyzeSpinner = ora("Looking up metadata...").start();
+
+    const metadataResults = await batchGetMetadata(files, {
+        useApi,
+        onProgress: (current, total, meta) => {
+            analyzeSpinner.text = `Analyzing ${current}/${total}: ${meta.cleanedName}`;
+        },
+    });
+
+    analyzeSpinner.succeed(`Analyzed ${metadataResults.length} files`);
+
+    // Detect series groups AFTER metadata analysis (uses ComicInfo.xml series names)
+    logger.section("Detecting series");
+    const seriesSpinner = ora("Grouping files into series...").start();
+
+    // Use metadata series names when available, fall back to filename detection
+    let seriesGroups = detectSeriesGroups(files, metadataResults);
 
     if (seriesGroups.length > 0) {
         seriesSpinner.succeed(`Detected ${seriesGroups.length} series with multiple issues`);
@@ -317,20 +358,6 @@ export async function runAutoOrganizer(sourceDir, outputDir, options = {}) {
     if (singleFileCount > 0) {
         singleFileHandling = await promptSingleFileHandling(singleFileCount);
     }
-
-    // Analyze files
-    logger.section("Analyzing files for metadata");
-
-    const analyzeSpinner = ora("Looking up metadata...").start();
-
-    const metadataResults = await batchGetMetadata(files, {
-        useApi,
-        onProgress: (current, total, meta) => {
-            analyzeSpinner.text = `Analyzing ${current}/${total}: ${meta.cleanedName}`;
-        },
-    });
-
-    analyzeSpinner.succeed(`Analyzed ${metadataResults.length} files`);
 
     // Build assignments with series detection
     let assignments = buildAssignments(files, metadataResults, seriesLookupMap, seriesGroups);

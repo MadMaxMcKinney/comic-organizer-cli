@@ -56,6 +56,55 @@ describe("Series Detection Service", () => {
             expect(groups.length).toBeGreaterThanOrEqual(1);
         });
 
+        it("should use ComicInfo.xml series names when metadata is provided", () => {
+            const files = ["/path/completely-different-name-001.cbz", "/path/also-different-002.cbz", "/path/another-name-003.cbz"];
+
+            // Mock metadata with same series name from ComicInfo.xml
+            const metadataResults = [
+                { source: "comicinfo-xml", series: "The Amazing Spider-Man", publisher: "Marvel" },
+                { source: "comicinfo-xml", series: "The Amazing Spider-Man", publisher: "Marvel" },
+                { source: "comicinfo-xml", series: "The Amazing Spider-Man", publisher: "Marvel" },
+            ];
+
+            const groups = detectSeriesGroups(files, metadataResults);
+
+            expect(groups.length).toBe(1);
+            expect(groups[0].seriesName).toBe("The Amazing Spider-Man");
+            expect(groups[0].files.length).toBe(3);
+        });
+
+        it("should prioritize ComicInfo.xml series over filename detection", () => {
+            const files = ["/path/Batman #001.cbz", "/path/Batman #002.cbz"];
+
+            // ComicInfo.xml says it's actually Superman
+            const metadataResults = [
+                { source: "comicinfo-xml", series: "Superman", publisher: "DC Comics" },
+                { source: "comicinfo-xml", series: "Superman", publisher: "DC Comics" },
+            ];
+
+            const groups = detectSeriesGroups(files, metadataResults);
+
+            expect(groups.length).toBe(1);
+            expect(groups[0].seriesName).toBe("Superman"); // ComicInfo wins over filename
+            expect(groups[0].files.length).toBe(2);
+        });
+
+        it("should fall back to filename detection when metadata has no series", () => {
+            const files = ["/path/Batman #001.cbz", "/path/Batman #002.cbz"];
+
+            // Metadata without series info
+            const metadataResults = [
+                { source: "filename-analysis", series: null, publisher: "DC Comics" },
+                { source: "filename-analysis", series: null, publisher: "DC Comics" },
+            ];
+
+            const groups = detectSeriesGroups(files, metadataResults);
+
+            expect(groups.length).toBe(1);
+            expect(groups[0].seriesName.toLowerCase()).toContain("batman"); // Falls back to filename
+            expect(groups[0].files.length).toBe(2);
+        });
+
         it("should handle mixed issue numbering formats", () => {
             const files = ["/path/Batman 001.cbz", "/path/Batman #002.cbz", "/path/Batman Issue 003.cbz"];
 

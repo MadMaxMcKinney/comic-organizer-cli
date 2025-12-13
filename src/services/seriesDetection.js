@@ -97,16 +97,36 @@ function calculateSimilarity(str1, str2) {
 /**
  * Detect series groupings from a list of files
  * Returns groups of files that belong to the same series
- * This runs BEFORE folder organization to inform folder structure
+ * This runs AFTER metadata extraction to use ComicInfo.xml series names
+ *
+ * @param {Array<string>} files - Array of file paths
+ * @param {Array<Object>} metadataResults - Array of metadata objects (optional)
  */
-export function detectSeriesGroups(files) {
+export function detectSeriesGroups(files, metadataResults = null) {
     const SIMILARITY_THRESHOLD = 0.5;
     const groups = [];
 
     // Extract series name from each file
-    const fileInfo = files.map((file) => {
+    const fileInfo = files.map((file, index) => {
         const filename = getFilename(file);
-        const seriesName = extractSeriesName(filename);
+
+        // Priority 1: Use ComicInfo.xml series name if available
+        let seriesName;
+        if (metadataResults && metadataResults[index]) {
+            const metadata = metadataResults[index];
+            if (metadata.source === "comicinfo-xml" && metadata.series) {
+                seriesName = metadata.series;
+            } else if (metadata.series) {
+                seriesName = metadata.series;
+            } else {
+                // Fall back to filename extraction
+                seriesName = extractSeriesName(filename);
+            }
+        } else {
+            // No metadata available, use filename
+            seriesName = extractSeriesName(filename);
+        }
+
         const normalizedSeries = normalizeForComparison(seriesName);
         return { file, filename, seriesName, normalizedSeries };
     });
@@ -138,11 +158,24 @@ export function detectSeriesGroups(files) {
             // Use the shortest series name (usually most accurate)
             const shortestName = matchingFiles.reduce((shortest, f) => (f.seriesName.length < shortest.length ? f.seriesName : shortest), matchingFiles[0].seriesName);
 
-            // Capitalize first letter of each word
-            const formattedName = shortestName
-                .split(" ")
-                .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-                .join(" ");
+            // Check if any file has ComicInfo.xml data - if so, preserve its exact casing
+            const comicInfoFile = matchingFiles.find((f) => {
+                const fileIndex = files.indexOf(f.file);
+                return fileIndex !== -1 && metadataResults && metadataResults[fileIndex] && metadataResults[fileIndex].source === "comicinfo-xml" && metadataResults[fileIndex].series;
+            });
+
+            let formattedName;
+            if (comicInfoFile) {
+                // Use the exact series name from ComicInfo.xml (preserve casing)
+                const fileIndex = files.indexOf(comicInfoFile.file);
+                formattedName = metadataResults[fileIndex].series;
+            } else {
+                // Capitalize first letter of each word for filename-detected series
+                formattedName = shortestName
+                    .split(" ")
+                    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                    .join(" ");
+            }
 
             groups.push({
                 seriesName: formattedName,
