@@ -271,7 +271,7 @@ export async function renameFilesHandler(sourceDir, outputDir) {
         {
             type: "confirm",
             name: "confirm",
-            message: `Rename ${renameActions.length} files?`,
+            message: `Rename ${renameActions.length} files? You can manually rename changed files after this step.`,
             default: true,
         },
     ]);
@@ -324,7 +324,7 @@ export async function renameFilesHandler(sourceDir, outputDir) {
         {
             type: "confirm",
             name: "wantManualRename",
-            message: "Would you like to manually rename any of the changed files?",
+            message: "Would you like to manually rename any of the changed files? When renaming, you'll see the previous and new name.",
             default: false,
         },
     ]);
@@ -341,8 +341,9 @@ export async function renameFilesHandler(sourceDir, outputDir) {
                 }
             })
             .map((action) => ({
-                name: action.newFilename,
+                name: chalk.dim(action.oldFilename) + chalk.yellow(" → ") + chalk.white(action.newFilename),
                 value: action,
+                short: action.newFilename,
             }));
 
         if (renamedFiles.length === 0) {
@@ -374,7 +375,7 @@ export async function renameFilesHandler(sourceDir, outputDir) {
                 {
                     type: "input",
                     name: "newManualFilename",
-                    message: "Enter new filename (without extension):",
+                    message: chalk.dim(`Original: ${fileToRename.oldFilename}\n`) + "Enter new filename (without extension):",
                     default: path.basename(fileToRename.newFilename, path.extname(fileToRename.newFilename)),
                     validate: (input) => {
                         if (!input || input.trim() === "") {
@@ -395,12 +396,13 @@ export async function renameFilesHandler(sourceDir, outputDir) {
 
             try {
                 await fs.move(fileToRename.newPath, finalPath, { overwrite: false });
-                logger.success(`Renamed to: ${finalFilename}`);
+                logger.success(`${chalk.yellow(fileToRename.newFilename)} ${chalk.dim("→")} ${chalk.green(finalFilename)}`);
 
                 // Update the action in our list
                 const index = renamedFiles.findIndex((f) => f.value === fileToRename);
                 if (index !== -1) {
-                    renamedFiles[index].name = finalFilename;
+                    renamedFiles[index].name = chalk.dim(fileToRename.oldFilename) + chalk.yellow(" → ") + chalk.white(finalFilename);
+                    renamedFiles[index].short = finalFilename;
                     renamedFiles[index].value.newFilename = finalFilename;
                     renamedFiles[index].value.newPath = finalPath;
                 }
