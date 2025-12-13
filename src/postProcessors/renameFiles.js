@@ -257,17 +257,11 @@ export async function renameFilesHandler(sourceDir, outputDir) {
     logger.section(`Preview: ${renameActions.length} files will be renamed`);
     logger.newline();
 
-    const previewCount = Math.min(5, renameActions.length);
-    for (let i = 0; i < previewCount; i++) {
+    for (let i = 0; i < renameActions.length; i++) {
         const action = renameActions[i];
         console.log(chalk.dim("  Old: ") + chalk.yellow(action.oldFilename));
         console.log(chalk.dim("  New: ") + chalk.green(action.newFilename));
-        if (i < previewCount - 1) logger.newline();
-    }
-
-    if (renameActions.length > previewCount) {
-        logger.newline();
-        console.log(chalk.dim(`  ... and ${renameActions.length - previewCount} more files`));
+        if (i < renameActions.length - 1) logger.newline();
     }
 
     logger.newline();
